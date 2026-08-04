@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { getGenres } from '../lib/tmdb';
 
   const dispatch = createEventDispatcher();

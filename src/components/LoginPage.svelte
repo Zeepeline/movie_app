@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   
+  import { loginWithGoogle } from '../store/auth';
+  
   const dispatch = createEventDispatcher();
   
   let email = '';
@@ -9,19 +11,24 @@
 
   function handleSubmit() {
     isSubmitting = true;
-    // Simulate network delay
+    // Simulate network delay for email login
     setTimeout(() => {
       isSubmitting = false;
       dispatch('loginSuccess');
     }, 1200);
   }
 
-  function handleGoogleLogin() {
+  async function handleGoogleLogin() {
     isSubmitting = true;
-    setTimeout(() => {
-      isSubmitting = false;
+    try {
+      await loginWithGoogle();
       dispatch('loginSuccess');
-    }, 1200);
+    } catch (error) {
+      console.error(error);
+      alert("Gagal login dengan Google. Silakan coba lagi.");
+    } finally {
+      isSubmitting = false;
+    }
   }
 
   onMount(() => {

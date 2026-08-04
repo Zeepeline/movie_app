@@ -11,11 +11,12 @@
   import MovieCard from "./components/MovieCard.svelte";
   import Navbar from "./components/Navbar.svelte";
   import PlayerModal from "./components/PlayerModal.svelte";
-  import { getImageUrl, getMoviesByGenre, getNowPlayingMovies, getTopRatedMovies, getTrendingMovies } from './lib/tmdb';
+  import { getImageUrl, getMoviesByGenre, getNowPlayingMovies, getTopRatedMovies, getTrendingMovies, getIndonesianMovies } from './lib/tmdb';
 
   let trendingMovies: any[] = [];
   let nowPlayingMovies: any[] = [];
   let topRatedMovies: any[] = [];
+  let indoMovies: any[] = [];
   let heroMovies: any[] = [];
   let isLoading = true;
 
@@ -25,14 +26,16 @@
   onMount(async () => {
     isLoading = true;
     try {
-      const [trending, nowPlaying, topRated] = await Promise.all([
+      const [trending, nowPlaying, topRated, indo] = await Promise.all([
         getTrendingMovies(),
         getNowPlayingMovies(),
-        getTopRatedMovies()
+        getTopRatedMovies(),
+        getIndonesianMovies()
       ]);
       trendingMovies = trending.slice(0, 6);
       nowPlayingMovies = nowPlaying.slice(0, 3);
       topRatedMovies = topRated.slice(0, 6);
+      indoMovies = indo.slice(0, 6);
       
       if (trendingMovies.length > 0) {
         heroMovies = trendingMovies.slice(0, 5);
@@ -54,7 +57,7 @@
 
   function openDetail(event: CustomEvent<{ id: string | number, type?: string }>) {
     detailMovieId = event.detail.id;
-    detailMediaType = event.detail.type || 'movie';
+    detailMediaType = event.detail.type?.toLowerCase() || 'movie';
   }
 
   function handleNavigate(event: CustomEvent<{ page: string }>) {
@@ -65,7 +68,7 @@
   function openPlayer(event: CustomEvent<{ id: string | number, type?: string, season?: number, episode?: number }>) {
     playerOptions = {
       id: event.detail.id,
-      type: event.detail.type || 'movie',
+      type: event.detail.type?.toLowerCase() || 'movie',
       season: event.detail.season,
       episode: event.detail.episode
     };
@@ -182,6 +185,32 @@
           {/each}
         {:else}
           {#each topRatedMovies as movie}
+            <MovieCard 
+              movieId={movie.id}
+              title={movie.title || movie.name}
+              imageUrl={getImageUrl(movie.poster_path)}
+              rating={movie.vote_average || 0}
+              type={movie.media_type || 'Movie'}
+              year={(movie.release_date || movie.first_air_date || '').substring(0, 4)}
+              on:detail={openDetail}
+            />
+          {/each}
+        {/if}
+        </div>
+      </section>
+
+    <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Film Indonesia</h2>
+        <a href="/indo" class="text-sm font-medium text-text-muted hover:text-white transition-colors">See more &rarr;</a>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+        {#if isLoading}
+          {#each Array(6) as _}
+            <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
+          {/each}
+        {:else}
+          {#each indoMovies as movie}
             <MovieCard 
               movieId={movie.id}
               title={movie.title || movie.name}

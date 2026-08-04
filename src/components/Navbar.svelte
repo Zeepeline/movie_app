@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
   import { searchMovies, getImageUrl } from '../lib/tmdb';
+  import { user, logout } from '../store/auth';
 
   const dispatch = createEventDispatcher();
   let isScrolled = false;
@@ -116,7 +117,11 @@
           on:click={() => isProfileOpen = !isProfileOpen}
           aria-label="Profile Menu"
         >
-          <img src="https://i.pravatar.cc/150?img=47" alt="Profile" class="w-full h-full object-cover" />
+          {#if $user && $user.photoURL}
+            <img src={$user.photoURL} alt="Profile" class="w-full h-full object-cover" />
+          {:else}
+            <img src="https://i.pravatar.cc/150?img=47" alt="Profile" class="w-full h-full object-cover" />
+          {/if}
         </button>
 
         {#if isProfileOpen}
@@ -127,7 +132,13 @@
           
           <div class="absolute right-0 mt-3 w-48 bg-bg-elevated border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 py-2">
             <div class="px-4 py-2 border-b border-white/5 mb-2">
-              <p class="text-sm font-bold text-white">Guest User</p>
+              <p class="text-sm font-bold text-white">
+                {#if $user}
+                  {$user.displayName || $user.email || 'User'}
+                {:else}
+                  Guest User
+                {/if}
+              </p>
             </div>
             <ul class="flex flex-col">
               <li>
@@ -147,12 +158,21 @@
                 </button>
               </li>
               <li>
-                <button 
-                  class="w-full text-left px-4 py-2 text-sm text-text-muted hover:text-white hover:bg-white/5 transition-colors"
-                  on:click={() => { isProfileOpen = false; dispatch('navigate', { page: 'login' }); }}
-                >
-                  Sign In
-                </button>
+                {#if $user}
+                  <button 
+                    class="w-full text-left px-4 py-2 text-sm text-text-muted hover:text-white hover:bg-white/5 transition-colors"
+                    on:click={async () => { isProfileOpen = false; await logout(); dispatch('navigate', { page: 'home' }); }}
+                  >
+                    Sign Out
+                  </button>
+                {:else}
+                  <button 
+                    class="w-full text-left px-4 py-2 text-sm text-text-muted hover:text-white hover:bg-white/5 transition-colors"
+                    on:click={() => { isProfileOpen = false; dispatch('navigate', { page: 'login' }); }}
+                  >
+                    Sign In
+                  </button>
+                {/if}
               </li>
             </ul>
           </div>

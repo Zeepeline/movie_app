@@ -44,6 +44,11 @@ export async function getNowPlayingMovies() {
   return data.results || [];
 }
 
+export async function getIndonesianMovies(page: number = 1) {
+  const data = await fetchTMDB(`/discover/movie?with_original_language=id&page=${page}`);
+  return data.results || [];
+}
+
 export async function searchMovies(query: string) {
   if (!query || query.trim() === "") return [];
   const data = await fetchTMDB(
@@ -81,7 +86,7 @@ export async function getMovieDetails(id: number | string) {
 }
 
 export async function getMovieDetailsFull(id: number | string, mediaType: string = 'movie') {
-  return await fetchTMDB(`/${mediaType}/${id}?append_to_response=credits,similar`);
+  return await fetchTMDB(`/${mediaType}/${id}?append_to_response=credits,similar,reviews`);
 }
 
 export async function getTvSeasonDetails(tvId: number | string, seasonNumber: number) {
