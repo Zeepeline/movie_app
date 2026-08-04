@@ -1,17 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import CategoryFilter from "./components/CategoryFilter.svelte";
   import ContinueWatchingCard from "./components/ContinueWatchingCard.svelte";
-  import DetailPage from "./pages/DetailPage.svelte";
-  import MoviesPage from "./pages/MoviesPage.svelte";
-  import SeriesPage from "./pages/SeriesPage.svelte";
-  import WatchlistPage from "./pages/WatchlistPage.svelte";
-  import LoginPage from "./pages/LoginPage.svelte";
   import Hero from "./components/Hero.svelte";
   import MovieCard from "./components/MovieCard.svelte";
   import Navbar from "./components/Navbar.svelte";
   import PlayerModal from "./components/PlayerModal.svelte";
-  import { getImageUrl, getMoviesByGenre, getNowPlayingMovies, getTopRatedMovies, getTrendingMovies, getIndonesianMovies } from './lib/tmdb';
+  import { getImageUrl, getIndonesianMovies, getNowPlayingMovies, getTopRatedMovies, getTrendingMovies } from './lib/tmdb';
+  import DetailPage from "./pages/DetailPage.svelte";
+  import LoginPage from "./pages/LoginPage.svelte";
+  import MoviesPage from "./pages/MoviesPage.svelte";
+  import SeriesPage from "./pages/SeriesPage.svelte";
+  import WatchlistPage from "./pages/WatchlistPage.svelte";
 
   let trendingMovies: any[] = [];
   let nowPlayingMovies: any[] = [];
@@ -84,7 +83,7 @@
 </script>
 
 <main class={currentPage === 'login' ? '' : 'pb-16'}>
-  {#if currentPage !== 'login'}
+  {#if currentPage !== 'login' && !detailMovieId}
     <Navbar 
       on:play={openPlayer} 
       on:detail={openDetail} 

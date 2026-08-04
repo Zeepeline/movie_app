@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import CategoryFilter from '../components/CategoryFilter.svelte';
   import MovieCard from '../components/MovieCard.svelte';
-  import { getMoviesByGenre, getImageUrl } from '../lib/tmdb';
+  import { getImageUrl, getMoviesByGenre } from '../lib/tmdb';
 
   const dispatch = createEventDispatcher();
   
