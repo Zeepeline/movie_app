@@ -1,48 +1,107 @@
-# Svelte + TS + Vite
+# Moov - Movie & TV Series App 🎬
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+Moov adalah aplikasi *streaming/discovery* Film dan Serial TV bergaya sinematik (terinspirasi dari antarmuka Netflix). Dibangun menggunakan **Svelte**, **Vite**, **Tailwind CSS**, dan **TMDB API**, aplikasi ini menawarkan pengalaman navigasi yang mulus, cepat, dan modern.
 
-## Recommended IDE Setup
+## ✨ Fitur Utama
+- **Cinematic UI/UX:** Desain antarmuka premium dengan elemen *glassmorphism*, efek *hover*, dan navigasi imersif.
+- **Movies & TV Series:** Telusuri ragam Film dan Serial TV populer.
+- **Episodes Grid:** Tampilan daftar episode interaktif untuk TV Series.
+- **Video Player terintegrasi:** Tonton langsung film atau serial (*powered by* Vidking) melalui *Player Modal* terpadu.
+- **Watchlist:** Fitur "My List" untuk menyimpan film favorit di penyimpanan lokal (*local storage*).
+- **Pencarian Instan:** *Live search* super responsif.
+- **Halaman Login:** Simulasi otentikasi bergaya layar penuh dengan dukungan simulasi "Sign in with Google".
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## 🚀 Instalasi & Menjalankan di Lokal
 
-## Need an official Svelte framework?
+1. **Kloning Repositori:**
+   ```bash
+   git clone https://github.com/Zeepeline/movie_app.git
+   cd movie_app
+   ```
+2. **Instal Dependensi:**
+   ```bash
+   npm install
+   ```
+3. **Jalankan Server Pengembangan (Dev Server):**
+   ```bash
+   npm run dev
+   ```
+4. Buka browser dan arahkan ke `http://localhost:5173`.
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+## 🌐 Cara Deploy ke GitHub Pages (Otomatis dengan GitHub Actions)
 
-## Technical considerations
+Anda bisa meng-*online*-kan web ini secara gratis di GitHub Pages. Agar setiap kali Anda melakukan `git push`, webnya otomatis ter-*update*, kita bisa menggunakan fitur **GitHub Actions**.
 
-**Why use this over SvelteKit?**
+### 1. Ubah Pengaturan Vite (`vite.config.ts`)
+Buka file `vite.config.ts` dan tambahkan `base`. Ganti `movie_app` dengan nama repositori Anda:
+```typescript
+import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+export default defineConfig({
+  plugins: [svelte()],
+  base: '/movie_app/' // Hapus ini jika menggunakan domain kustom (misal: irmintul.online)
+})
 ```
-# movie_app
+
+### 2. Aktifkan Izin Workflow di GitHub
+1. Masuk ke halaman repo GitHub Anda.
+2. Buka menu **Settings** > **Actions** > **General**.
+3. Gulir ke bawah ke bagian **Workflow permissions**, pastikan Anda mencentang **Read and write permissions**, lalu klik **Save**.
+
+### 3. Buat File Konfigurasi GitHub Actions
+1. Di dalam proyek lokal Anda, buat folder `.github/workflows/`.
+2. Buat file bernama `deploy.yml` di dalam folder tersebut dan isi dengan kode berikut:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+### 4. Push ke GitHub
+Simpan semuanya, lalu eksekusi di terminal:
+```bash
+git add .
+git commit -m "Setup GitHub Actions for deployment"
+git push origin main
+```
+Tunggu beberapa menit, GitHub akan membangun aplikasi Anda secara otomatis. Anda dapat melihat hasilnya di `https://Zeepeline.github.io/movie_app/`.
+
+### 5. (Opsional) Menggunakan Domain Pribadi (Misal: `irmintul.online`)
+Jika Anda menggunakan *custom domain*:
+1. Hapus opsi `base: '/movie_app/'` di `vite.config.ts`.
+2. Di repositori GitHub, masuk ke **Settings** > **Pages**.
+3. Pada opsi **Custom domain**, masukkan `irmintul.online` dan simpan.
+4. Di penyedia domain Anda (seperti Niagahoster/Hostinger), buat 4 **A Record** ke:
+   - `185.199.108.153`
+   - `185.199.109.153`
+   - `185.199.110.153`
+   - `185.199.111.153`
+5. *(Tunggu masa propagasi DNS maksimal 1x24 jam, web Anda sudah bisa diakses lewat domain pribadi!)*
