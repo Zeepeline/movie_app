@@ -88,7 +88,7 @@ export async function getMovieDetails(id: number | string): Promise<MovieDetails
 }
 
 export async function getMovieDetailsFull(id: number | string, mediaType: string = 'movie'): Promise<MovieDetails> {
-  return await fetchTMDB<MovieDetails>(`/${mediaType}/${id}?append_to_response=credits,similar,reviews`);
+  return await fetchTMDB<MovieDetails>(`/${mediaType}/${id}?append_to_response=credits,similar,reviews,videos`);
 }
 
 export async function getTvSeasonDetails(tvId: number | string, seasonNumber: number): Promise<TvSeasonDetails> {

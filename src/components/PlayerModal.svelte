@@ -42,13 +42,13 @@
     { name: '2Embed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.2embed.cc/embedtv/${id}&s=${s||1}&e=${e||1}&autoplay=1` : `https://www.2embed.cc/embed/${id}?autoplay=1` }
   ];
 
-  let prevTmdbId: string | number = "";
+  let prevPlaybackKey = "";
   $: {
-    if (show && tmdbId && tmdbId !== prevTmdbId) {
-      // Reset state saat membuka film baru
-      prevTmdbId = tmdbId;
+    const currentKey = `${tmdbId}-${season}-${episode}`;
+    if (show && tmdbId && currentKey !== prevPlaybackKey) {
+      // Reset state saat membuka film/episode baru
+      prevPlaybackKey = currentKey;
       subtitlesList = [];
-      imdbId = null;
       showSubtitleModal = false;
       
       // Auto-rotate to landscape if on a mobile portrait screen
@@ -59,14 +59,29 @@
       }
       
       resetControlsTimeout();
+      fetchSubtitles(true); // Auto-fetch silent
     } else if (!show) {
       // Reset state when closed
       subtitlesList = [];
       imdbId = null;
       showSubtitleModal = false;
       isForceLandscape = false;
-      prevTmdbId = "";
+      prevPlaybackKey = "";
       clearTimeout(controlsTimeout);
+    }
+  }
+
+  function nextEpisode() {
+    if (mediaType !== 'tv') return;
+    episode = (episode || 1) + 1;
+    resetControlsTimeout();
+  }
+  
+  function prevEpisode() {
+    if (mediaType !== 'tv') return;
+    if ((episode || 1) > 1) {
+      episode = (episode || 1) - 1;
+      resetControlsTimeout();
     }
   }
 
@@ -87,9 +102,11 @@
     }
   }
 
-  async function fetchSubtitles() {
-    showSubtitleModal = true;
-    resetControlsTimeout();
+  async function fetchSubtitles(silent = false) {
+    if (!silent) {
+      showSubtitleModal = true;
+      resetControlsTimeout();
+    }
     if (subtitlesList.length > 0) return; // Already fetched
 
     isFetchingSubtitles = true;
@@ -168,7 +185,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div 
-    class="fixed z-100 inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm transition-all duration-500 ease-in-out" 
+    class="fixed z-100 inset-0 flex items-center justify-center bg-black transition-all duration-500 ease-in-out" 
     transition:fade={{ duration: 200 }} 
     on:click={close}
   >
@@ -247,13 +264,37 @@
           
           <div class="md:hidden w-px h-5 bg-white/20 mx-0.5"></div>
 
+          {#if mediaType === 'tv'}
+            <!-- Prev/Next Episode -->
+            <div class="flex items-center gap-1 bg-white/5 rounded-xl p-0.5 border border-white/5">
+              <button 
+                class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                on:click|stopPropagation={prevEpisode}
+                disabled={(episode || 1) <= 1}
+                title="Episode Sebelumnya"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+              </button>
+              <span class="text-xs font-bold text-white/70 px-1">E{episode || 1}</span>
+              <button 
+                class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                on:click|stopPropagation={nextEpisode}
+                title="Episode Selanjutnya"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+              </button>
+            </div>
+            
+            <div class="w-px h-5 bg-white/20 mx-0.5"></div>
+          {/if}
+
           <!-- Cari Subtitle Button -->
           <button 
-            class="text-white/80 hover:text-brand-red hover:bg-white/10 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-1.5"
-            on:click|preventDefault|stopPropagation={fetchSubtitles}
+            class="text-white/80 hover:text-brand-red hover:bg-white/10 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-1.5 {subtitlesList.length > 0 ? 'text-brand-red' : ''}"
+            on:click|preventDefault|stopPropagation={() => fetchSubtitles()}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <span class="font-medium hidden sm:inline">Subtitle</span>
+            <span class="font-medium hidden sm:inline">Subtitle {subtitlesList.length > 0 ? `(${subtitlesList.length})` : ''}</span>
           </button>
 
           <div class="w-px h-5 bg-white/20 mx-0.5"></div>

@@ -3,6 +3,8 @@
   import { getImageUrl, getMovieDetailsFull, getTvSeasonDetails } from '../lib/tmdb';
   import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
   import MovieCard from '../components/MovieCard.svelte';
+  import { historyStore } from '../store/history';
+  import { fade } from 'svelte/transition';
 
   export let movieId: number | string;
   export let mediaType: string = 'movie';
@@ -21,9 +23,29 @@
   let isComingSoon = false;
   let isRecentlyReleased = false;
 
+  let lastWatchedSeason = 1;
+  let lastWatchedEpisode = 1;
+  let hasHistory = false;
+  let showTrailerModal = false;
+  let trailerKey = "";
+
   $: {
     if (movie) {
       inWatchlist = isInWatchlist(movie.id);
+      
+      const historyItem = $historyStore.find(item => item.id == movieId);
+      if (historyItem && mediaType === 'tv') {
+        hasHistory = true;
+        lastWatchedSeason = historyItem.season || 1;
+        lastWatchedEpisode = historyItem.episode || 1;
+      }
+
+      if (movie.videos && movie.videos.results) {
+        const trailer = movie.videos.results.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube');
+        if (trailer) {
+          trailerKey = trailer.key;
+        }
+      }
     }
   }
 
@@ -94,8 +116,8 @@
       type: mediaType,
       title: movie?.title || movie?.name,
       imageUrl: movie?.backdrop_path || movie?.poster_path,
-      season: selectedSeasonNumber || undefined,
-      episode: 1 // Default to episode 1 if playing from the main button
+      season: hasHistory ? lastWatchedSeason : (selectedSeasonNumber || undefined),
+      episode: hasHistory ? lastWatchedEpisode : 1 
     });
   }
 
@@ -193,14 +215,25 @@
             </div>
           {/if}
 
-          <div class="flex gap-4">
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center gap-4">
             <button 
-              class="rounded-full px-8 py-3.5 font-bold text-base inline-flex items-center justify-center gap-2 transition-colors bg-brand-red text-white hover:bg-brand-red/90 shadow-[0_0_20px_rgba(229,9,20,0.4)]"
+              class="bg-white text-black hover:bg-white/90 font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center gap-2 shrink-0"
               on:click={handlePlay}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Play Now</span>
+              <span>{hasHistory ? `Lanjutkan S${lastWatchedSeason} E${lastWatchedEpisode}` : 'Play Now'}</span>
             </button>
+            
+            {#if trailerKey}
+              <button 
+                class="bg-white/10 text-white hover:bg-white/20 font-bold py-3 px-6 rounded-full transition-all duration-300 backdrop-blur-md border border-white/20 flex items-center gap-2 shrink-0"
+                on:click={() => showTrailerModal = true}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>
+                <span>Trailer</span>
+              </button>
+            {/if}
             <button 
               class={`rounded-full w-14 h-14 font-semibold inline-flex items-center justify-center transition-colors backdrop-blur-md border border-white/10 ${inWatchlist ? 'bg-white/30 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
               aria-label={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
@@ -380,6 +413,29 @@
       {/if}
     </div>
   </div>
+
+  <!-- Trailer Modal -->
+  {#if showTrailerModal}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-500 p-4" transition:fade={{ duration: 200 }} on:click={() => showTrailerModal = false}>
+      <div class="relative w-full max-w-5xl aspect-video bg-black shadow-2xl rounded-2xl overflow-hidden border border-white/10" on:click|stopPropagation role="presentation">
+        <button 
+          class="absolute top-4 right-4 z-10 text-white/70 hover:text-white bg-black/50 hover:bg-brand-red p-2 rounded-full transition-colors backdrop-blur-md"
+          on:click={() => showTrailerModal = false}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <iframe 
+          src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1`} 
+          title="Trailer" 
+          class="w-full h-full border-0" 
+          allow="autoplay; fullscreen; encrypted-media; picture-in-picture" 
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
