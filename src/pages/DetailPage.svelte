@@ -92,6 +92,8 @@
     dispatch('play', { 
       id: movieId, 
       type: mediaType,
+      title: movie?.title || movie?.name,
+      imageUrl: movie?.backdrop_path || movie?.poster_path,
       season: selectedSeasonNumber || undefined,
       episode: 1 // Default to episode 1 if playing from the main button
     });
@@ -270,7 +272,7 @@
                       <button 
                         class="w-12 h-12 bg-brand-red rounded-full flex items-center justify-center text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform"
                         aria-label="Play episode {episode.episode_number}"
-                        on:click={() => dispatch('play', { id: movie.id, type: 'tv', season: episode.season_number, episode: episode.episode_number })}
+                        on:click={() => dispatch('play', { id: movie.id, type: 'tv', title: `${movie.title || movie.name} - S${episode.season_number}E${episode.episode_number}`, imageUrl: episode.still_path || movie.backdrop_path || movie.poster_path, season: episode.season_number, episode: episode.episode_number })}
                       >
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
                       </button>
@@ -317,33 +319,46 @@
       <!-- Reviews -->
       {#if movie.reviews && movie.reviews.results && movie.reviews.results.length > 0}
         <div class="mb-12">
-          <h2 class="text-2xl font-bold mb-6">Reviews & Comments</h2>
-          <div class="space-y-6">
-            {#each movie.reviews.results.slice(0, 5) as review}
-              <div class="bg-bg-elevated p-6 rounded-xl border border-white/10">
-                <div class="flex items-center gap-4 mb-4">
-                  <div class="w-12 h-12 rounded-full overflow-hidden bg-white/10 shrink-0">
-                    {#if review.author_details?.avatar_path}
-                      <img src={review.author_details.avatar_path.startsWith('/https') ? review.author_details.avatar_path.substring(1) : getImageUrl(review.author_details.avatar_path, 'w185')} alt={review.author} class="w-full h-full object-cover" />
-                    {:else}
-                      <div class="w-full h-full flex items-center justify-center text-white/50 text-xl font-bold uppercase">
-                        {review.author.charAt(0)}
-                      </div>
-                    {/if}
+          <div class="flex items-center gap-3 mb-8">
+            <h2 class="text-2xl font-bold text-white">Reviews & Comments</h2>
+            <div class="h-px bg-white/10 flex-1 ml-4 hidden sm:block"></div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {#each movie.reviews.results.slice(0, 6) as review}
+              <div class="group relative bg-white/2 border border-white/5 hover:border-white/10 p-6 rounded-3xl transition-all duration-300 hover:bg-white/4 overflow-hidden">
+                <!-- Decorative Quote Icon -->
+                <svg class="absolute top-4 right-4 w-16 h-16 text-white/3 group-hover:text-white/6 transition-colors duration-500 rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
+                
+                <div class="relative z-10 flex flex-col h-full">
+                  <div class="flex items-center gap-4 mb-5">
+                    <div class="w-12 h-12 rounded-full overflow-hidden bg-brand-red/10 border-2 border-brand-red/20 shrink-0 shadow-lg">
+                      {#if review.author_details?.avatar_path}
+                        <img src={review.author_details.avatar_path.startsWith('/https') ? review.author_details.avatar_path.substring(1) : getImageUrl(review.author_details.avatar_path, 'w185')} alt={review.author} class="w-full h-full object-cover" />
+                      {:else}
+                        <div class="w-full h-full flex items-center justify-center text-brand-red text-xl font-bold uppercase">
+                          {review.author.charAt(0)}
+                        </div>
+                      {/if}
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-white text-base leading-tight">{review.author}</h3>
+                      {#if review.author_details?.rating}
+                        <div class="flex items-center gap-1.5 mt-1.5 bg-white/5 w-max px-2 py-0.5 rounded-full border border-white/10">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-yellow-500"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>
+                          <span class="text-white/90 font-bold text-xs">{review.author_details.rating}<span class="text-white/40 font-normal">/10</span></span>
+                        </div>
+                      {/if}
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="font-bold text-white text-lg">{review.author}</h3>
-                    {#if review.author_details?.rating}
-                      <span class="flex items-center gap-1 text-yellow-500 font-bold text-sm mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>
-                        {review.author_details.rating}/10
-                      </span>
-                    {/if}
+                  
+                  <div class="flex-1">
+                    <p class="text-white/60 leading-relaxed text-sm italic relative">
+                      <span class="text-brand-red/40 text-xl leading-none absolute -left-2 -top-1">"</span>
+                      <span class="pl-2">{review.content.length > 250 ? review.content.substring(0, 250) + '...' : review.content}</span>
+                    </p>
                   </div>
                 </div>
-                <p class="text-white/80 leading-relaxed text-sm md:text-base whitespace-pre-wrap">
-                  {review.content.length > 500 ? review.content.substring(0, 500) + '...' : review.content}
-                </p>
               </div>
             {/each}
           </div>

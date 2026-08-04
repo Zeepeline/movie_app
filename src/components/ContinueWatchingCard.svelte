@@ -4,11 +4,17 @@
   export let imageUrl: string = "https://via.placeholder.com/400x225/333333/ffffff?text=Poster";
   export let progressPercentage: number = 45;
   export let movieId: number | string = "";
+  export let type: string = "movie";
 
   const dispatch = createEventDispatcher();
   
   function handleClick() {
-    dispatch('play', { id: movieId });
+    dispatch('play', { 
+      id: movieId,
+      type: type,
+      title: title,
+      imageUrl: imageUrl
+    });
   }
 </script>
 

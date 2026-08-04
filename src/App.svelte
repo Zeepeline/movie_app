@@ -11,9 +11,10 @@
   import MoviesPage from "./pages/MoviesPage.svelte";
   import SeriesPage from "./pages/SeriesPage.svelte";
   import WatchlistPage from "./pages/WatchlistPage.svelte";
+  import { historyStore, addToHistory } from './store/history';
 
   let trendingMovies: any[] = [];
-  let nowPlayingMovies: any[] = [];
+  $: nowPlayingMovies = $historyStore;
   let topRatedMovies: any[] = [];
   let indoMovies: any[] = [];
   let heroMovies: any[] = [];
@@ -25,14 +26,12 @@
   onMount(async () => {
     isLoading = true;
     try {
-      const [trending, nowPlaying, topRated, indo] = await Promise.all([
+      const [trending, topRated, indo] = await Promise.all([
         getTrendingMovies(),
-        getNowPlayingMovies(),
         getTopRatedMovies(),
         getIndonesianMovies()
       ]);
       trendingMovies = trending.slice(0, 6);
-      nowPlayingMovies = nowPlaying.slice(0, 3);
       topRatedMovies = topRated.slice(0, 6);
       indoMovies = indo.slice(0, 6);
       
@@ -64,7 +63,7 @@
     detailMovieId = null;
   }
 
-  function openPlayer(event: CustomEvent<{ id: string | number, type?: string, season?: number, episode?: number }>) {
+  function openPlayer(event: CustomEvent<{ id: string | number, type?: string, season?: number, episode?: number, title?: string, imageUrl?: string }>) {
     playerOptions = {
       id: event.detail.id,
       type: event.detail.type?.toLowerCase() || 'movie',
@@ -72,6 +71,17 @@
       episode: event.detail.episode
     };
     showPlayer = true;
+    
+    if (event.detail.title && event.detail.imageUrl) {
+      addToHistory({
+        id: event.detail.id,
+        type: event.detail.type?.toLowerCase() || 'movie',
+        title: event.detail.title,
+        imageUrl: event.detail.imageUrl,
+        season: event.detail.season,
+        episode: event.detail.episode
+      });
+    }
   }
 
   function closePlayer() {
@@ -149,26 +159,23 @@
       </div>
     </section>
 
-    <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
-        <h2 class="text-xl font-bold text-white mb-4">Now Playing</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 lg:max-w-[70%]">
-        {#if isLoading}
-          {#each Array(3) as _}
-            <div class="aspect-video rounded-xl bg-bg-elevated animate-pulse"></div>
-          {/each}
-        {:else}
-          {#each nowPlayingMovies as movie}
-            <ContinueWatchingCard 
-              movieId={movie.id}
-              title={movie.title || movie.name}
-              imageUrl={getImageUrl(movie.backdrop_path)}
-              progressPercentage={Math.floor(Math.random() * 60) + 10}
-              on:play={openPlayer}
-            />
-          {/each}
-        {/if}
-      </div>
-    </section>
+    {#if nowPlayingMovies.length > 0}
+      <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
+          <h2 class="text-xl font-bold text-white mb-4">Now Playing</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 lg:max-w-[70%]">
+            {#each nowPlayingMovies as movie}
+              <ContinueWatchingCard 
+                movieId={movie.id}
+                title={movie.title}
+                imageUrl={movie.imageUrl}
+                progressPercentage={50}
+                type={movie.type}
+                on:play={openPlayer}
+              />
+            {/each}
+        </div>
+      </section>
+    {/if}
 
 
 

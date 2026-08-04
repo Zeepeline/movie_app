@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -36,13 +37,15 @@ if (typeof window !== "undefined") {
 // Initialize Auth
 let auth: any;
 let googleProvider: any;
+let db: any;
 
 try {
   auth = getAuth(app);
   googleProvider = new GoogleAuthProvider();
-  console.log("Firebase Auth initialized");
+  db = getFirestore(app);
+  console.log("Firebase Auth & Firestore initialized");
 } catch (e) {
-  console.error("Firebase Auth failed to initialize", e);
+  console.error("Firebase Auth/Firestore failed to initialize", e);
 }
 
-export { analytics, app, auth, googleProvider };
+export { analytics, app, auth, db, googleProvider };

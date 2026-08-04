@@ -204,7 +204,7 @@
             <div class="flex gap-2 px-1">
               {#each servers as server, i}
                 <button 
-                  class="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all duration-300 {selectedServer === i ? 'bg-gradient-to-r from-brand-red to-red-600 text-white shadow-[0_4px_12px_rgba(229,9,20,0.4)] border border-transparent' : 'text-white/70 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20'}"
+                  class="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all duration-300 {selectedServer === i ? 'bg-linear-to-r from-brand-red to-red-500 text-white shadow-[0_4px_12px_rgba(229,9,20,0.4)] border border-transparent' : 'text-white/70 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20'}"
                   on:click|stopPropagation={() => { selectedServer = i; resetControlsTimeout(); }}
                 >
                   {server.name}
@@ -241,7 +241,8 @@
 
       <!-- Subtitle Search Results Overlay -->
       {#if showSubtitleModal}
-        <div class="absolute inset-y-0 right-0 w-[340px] bg-black/80 backdrop-blur-2xl border-l border-white/10 p-6 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-transform" style="z-index: 70;" transition:fade={{duration: 150}}>
+        <div class="absolute inset-0 bg-black/40 pointer-events-none z-65"></div>
+        <div class="absolute inset-y-0 right-0 w-85 bg-black/80 backdrop-blur-2xl border-l border-white/10 p-6 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-transform" style="z-index: 70;" transition:fade={{duration: 150}}>
           <div class="flex justify-between items-center mb-8">
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-red"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -265,7 +266,7 @@
             {:else}
               <div class="space-y-4">
                 {#each subtitlesList as sub}
-                  <div class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] hover:border-brand-red/30 rounded-2xl p-3 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(229,9,20,0.15)]">
+                  <div class="flex flex-col p-3 rounded-2xl bg-white/3 hover:bg-white/8 border border-white/5 transition-all duration-300 hover:border-brand-red/30 hover:shadow-[0_8px_30px_rgba(229,9,20,0.15)]">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2.5">
                         <span class="text-white/90 text-sm font-semibold">{getLanguageName(sub.lang)}</span>

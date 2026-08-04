@@ -50,7 +50,12 @@
   });
 
   function handlePlay() {
-    dispatch('play', { id: movieId });
+    dispatch('play', { 
+      id: movieId,
+      type: currentMovie.media_type || 'movie',
+      title: title,
+      imageUrl: coverUrl
+    });
   }
 </script>
 

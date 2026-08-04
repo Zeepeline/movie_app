@@ -23,9 +23,9 @@
     try {
       await loginWithGoogle();
       dispatch('loginSuccess');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Gagal login dengan Google. Silakan coba lagi.");
+      alert("Gagal login dengan Google: " + (error.message || "Silakan coba lagi."));
     } finally {
       isSubmitting = false;
     }
