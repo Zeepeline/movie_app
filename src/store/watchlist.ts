@@ -1,13 +1,6 @@
 import { writable, get } from 'svelte/store';
 
-export interface WatchlistItem {
-  id: number | string;
-  title: string;
-  poster_path: string | null;
-  vote_average: number;
-  media_type: string;
-  release_date: string;
-}
+import type { WatchlistItem } from '../types/watchlist';
 
 // Load from localStorage if available
 const storedWatchlist = typeof window !== 'undefined' ? localStorage.getItem('moov_watchlist') : null;

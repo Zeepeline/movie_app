@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import Plyr from 'plyr';
-  import 'plyr/dist/plyr.css';
   import Hls from 'hls.js';
-  import type { StreamSource, Subtitle } from '../lib/streamApi';
+  // import type Plyr from 'plyr';
+  import 'plyr/dist/plyr.css';
+  import { onDestroy, onMount } from 'svelte';
+  import type { StreamSource, Subtitle } from '../types/stream';
 
   export let sources: StreamSource[] = [];
   export let subtitles: Subtitle[] = [];
   
   let videoElement: HTMLVideoElement;
-  let player: Plyr;
+  // let player: Plyr;
   let hls: Hls;
 
   onMount(() => {
@@ -19,14 +19,14 @@
     if (!autoSource) return;
 
     // Menginisialisasi Plyr (Tampilan bergaya modern/Netflix)
-    player = new Plyr(videoElement, {
-      captions: { active: true, update: true, language: 'id' },
-      controls: [
-        'play-large', 'play', 'progress', 'current-time', 'duration', 
-        'mute', 'volume', 'captions', 'settings', 'pip', 'fullscreen'
-      ],
-      settings: ['captions', 'quality', 'speed'],
-    });
+    // player = new Plyr(videoElement, {
+    //   captions: { active: true, update: true, language: 'id' },
+    //   controls: [
+    //     'play-large', 'play', 'progress', 'current-time', 'duration', 
+    //     'mute', 'volume', 'captions', 'settings', 'pip', 'fullscreen'
+    //   ],
+    //   settings: ['captions', 'quality', 'speed'],
+    // });
 
     // Cek apakah format video adalah HLS (.m3u8)
     if (autoSource.url.includes('.m3u8')) {
@@ -51,7 +51,7 @@
   });
 
   onDestroy(() => {
-    if (player) player.destroy();
+    // if (player) player.destroy();
     if (hls) hls.destroy();
   });
 </script>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import CategoryFilter from './CategoryFilter.svelte';
-  import MovieCard from './MovieCard.svelte';
+  import CategoryFilter from '../components/CategoryFilter.svelte';
+  import MovieCard from '../components/MovieCard.svelte';
   import { getMoviesByGenre, getImageUrl } from '../lib/tmdb';
 
   const dispatch = createEventDispatcher();

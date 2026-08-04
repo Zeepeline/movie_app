@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { getImageUrl, getMovieDetailsFull, getTvSeasonDetails } from '../lib/tmdb';
-  import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../lib/watchlist';
-  import MovieCard from './MovieCard.svelte';
+  import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
+  import MovieCard from '../components/MovieCard.svelte';
 
   export let movieId: number | string;
   export let mediaType: string = 'movie';

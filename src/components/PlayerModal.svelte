@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { getStreamLinks, type StreamData } from '../lib/streamApi';
+  import { getStreamLinks } from '../lib/streamApi';
+  import type { StreamData } from '../types/stream';
   import CustomPlayer from './CustomPlayer.svelte';
 
   export let show: boolean = false;
@@ -284,13 +285,13 @@
 
       <!-- Subtitle Search Results Overlay -->
       {#if showSubtitleModal && !isMinimized}
-        <div class="absolute inset-y-0 right-0 w-80 bg-black/95 backdrop-blur-2xl border-l border-white/10 z-[60] p-5 flex flex-col shadow-2xl transition-transform" transition:fade={{duration: 150}}>
+        <div class="absolute inset-y-0 right-0 w-80 bg-black/95 backdrop-blur-2xl border-l border-white/10 z-60 p-5 flex flex-col shadow-2xl transition-transform" transition:fade={{duration: 150}}>
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
               Subtitle Indo
             </h3>
-            <button on:click|stopPropagation={() => showSubtitleModal = false} class="text-white/50 hover:text-white bg-white/5 p-1.5 rounded-full transition-colors">
+            <button title="subtitile" on:click|stopPropagation={() => showSubtitleModal = false} class="text-white/50 hover:text-white bg-white/5 p-1.5 rounded-full transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>

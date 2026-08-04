@@ -2,11 +2,11 @@
   import { onMount } from 'svelte';
   import CategoryFilter from "./components/CategoryFilter.svelte";
   import ContinueWatchingCard from "./components/ContinueWatchingCard.svelte";
-  import DetailPage from "./components/DetailPage.svelte";
-  import MoviesPage from "./components/MoviesPage.svelte";
-  import SeriesPage from "./components/SeriesPage.svelte";
-  import WatchlistPage from "./components/WatchlistPage.svelte";
-  import LoginPage from "./components/LoginPage.svelte";
+  import DetailPage from "./pages/DetailPage.svelte";
+  import MoviesPage from "./pages/MoviesPage.svelte";
+  import SeriesPage from "./pages/SeriesPage.svelte";
+  import WatchlistPage from "./pages/WatchlistPage.svelte";
+  import LoginPage from "./pages/LoginPage.svelte";
   import Hero from "./components/Hero.svelte";
   import MovieCard from "./components/MovieCard.svelte";
   import Navbar from "./components/Navbar.svelte";

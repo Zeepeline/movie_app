@@ -1,8 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { watchlistStore, type WatchlistItem } from '../lib/watchlist';
+  import { watchlistStore } from '../store/watchlist';
+  import type { WatchlistItem } from '../types/watchlist';
   import { getImageUrl } from '../lib/tmdb';
-  import MovieCard from './MovieCard.svelte';
+  import MovieCard from '../components/MovieCard.svelte';
 
   const dispatch = createEventDispatcher();
   let items: WatchlistItem[] = [];
