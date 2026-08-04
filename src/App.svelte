@@ -24,6 +24,28 @@
   let topRatedPage = 1;
 
   onMount(async () => {
+    // History API setup
+    window.addEventListener('popstate', (e) => {
+      const state = e.state;
+      if (state) {
+        currentPage = state.page || 'home';
+        detailMovieId = state.detailMovieId || null;
+        if (state.detailMediaType) detailMediaType = state.detailMediaType;
+        if (state.showPlayer && state.playerOptions) {
+          playerOptions = state.playerOptions;
+          showPlayer = true;
+        } else {
+          showPlayer = false;
+        }
+      } else {
+        currentPage = 'home';
+        detailMovieId = null;
+        showPlayer = false;
+      }
+    });
+
+    history.replaceState({ page: currentPage, detailMovieId, detailMediaType, showPlayer }, '');
+
     isLoading = true;
     try {
       const [trending, topRated, indo] = await Promise.all([
@@ -56,11 +78,13 @@
   function openDetail(event: CustomEvent<{ id: string | number, type?: string }>) {
     detailMovieId = event.detail.id;
     detailMediaType = event.detail.type?.toLowerCase() || 'movie';
+    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: false }, '');
   }
 
   function handleNavigate(event: CustomEvent<{ page: string }>) {
     currentPage = event.detail.page;
     detailMovieId = null;
+    history.pushState({ page: currentPage, detailMovieId: null, showPlayer: false }, '');
   }
 
   function openPlayer(event: CustomEvent<{ id: string | number, type?: string, season?: number, episode?: number, title?: string, imageUrl?: string }>) {
@@ -71,6 +95,7 @@
       episode: event.detail.episode
     };
     showPlayer = true;
+    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: true, playerOptions }, '');
     
     if (event.detail.title && event.detail.imageUrl) {
       addToHistory({
@@ -87,6 +112,9 @@
   function closePlayer() {
     showPlayer = false;
     playerOptions = null;
+    if (history.state?.showPlayer) {
+      history.back();
+    }
   }
 
 
@@ -98,7 +126,7 @@
       on:play={openPlayer} 
       on:detail={openDetail} 
       on:navigate={handleNavigate}
-      on:openWatchlist={() => { currentPage = 'watchlist'; detailMovieId = null; }} 
+      on:openWatchlist={() => { currentPage = 'watchlist'; detailMovieId = null; history.pushState({ page: 'watchlist', detailMovieId: null }, ''); }} 
     />
   {/if}
   
@@ -106,13 +134,13 @@
     <DetailPage 
       movieId={detailMovieId}
       mediaType={detailMediaType}
-      on:back={() => detailMovieId = null}
+      on:back={() => { if (history.state?.detailMovieId) history.back(); else detailMovieId = null; }}
       on:play={openPlayer}
       on:detail={openDetail}
     />
   {:else if currentPage === 'watchlist'}
     <WatchlistPage 
-      on:back={() => currentPage = 'home'}
+      on:back={() => { if (history.state?.page === 'watchlist') history.back(); else { currentPage = 'home'; history.pushState({ page: 'home' }, ''); } }}
       on:detail={openDetail}
     />
   {:else if currentPage === 'movies'}
@@ -167,7 +195,7 @@
               <ContinueWatchingCard 
                 movieId={movie.id}
                 title={movie.title}
-                imageUrl={movie.imageUrl}
+                imageUrl={movie.imageUrl?.startsWith('http') ? movie.imageUrl : getImageUrl(movie.imageUrl, 'w780')}
                 progressPercentage={50}
                 type={movie.type}
                 on:play={openPlayer}
@@ -182,7 +210,7 @@
     <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-white">Top Rated Movies</h2>
-        <a href="/top-rated" class="text-sm font-medium text-text-muted hover:text-white transition-colors">See more &rarr;</a>
+        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, ''); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
@@ -208,7 +236,7 @@
     <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-white">Film Indonesia</h2>
-        <a href="/indo" class="text-sm font-medium text-text-muted hover:text-white transition-colors">See more &rarr;</a>
+        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, ''); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}

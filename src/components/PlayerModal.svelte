@@ -31,11 +31,15 @@
     }, 4000);
   }
   let selectedServer = 0;
+  let isForceLandscape = false;
   const servers = [
-    { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}` : `https://vidlink.pro/movie/${id}` },
-    { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s||1}&episode=${e||1}` : `https://vidsrc.me/embed/movie?tmdb=${id}` },
-    { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}` : `https://autoembed.co/movie/tmdb/${id}` },
-    { name: 'Videasy', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.to/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.to/embed/movie/${id}` }
+    { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}?autoplay=1` : `https://autoembed.co/movie/tmdb/${id}?autoplay=1` },
+    { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
+    { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s||1}&episode=${e||1}&autoplay=1` : `https://vidsrc.me/embed/movie?tmdb=${id}&autoplay=1` },
+    { name: 'Videasy', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.to/embed/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidsrc.to/embed/movie/${id}?autoplay=1` },
+    { name: 'SuperEmbed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s||1}&e=${e||1}&autoplay=1` : `https://multiembed.mov/?video_id=${id}&tmdb=1&autoplay=1` },
+    { name: 'SmashyStream', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://player.smashy.stream/tv/?tmdb=${id}&season=${s||1}&episode=${e||1}&autoplay=1` : `https://player.smashy.stream/movie/?tmdb=${id}&autoplay=1` },
+    { name: '2Embed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.2embed.cc/embedtv/${id}&s=${s||1}&e=${e||1}&autoplay=1` : `https://www.2embed.cc/embed/${id}?autoplay=1` }
   ];
 
   let prevTmdbId: string | number = "";
@@ -46,12 +50,21 @@
       subtitlesList = [];
       imdbId = null;
       showSubtitleModal = false;
+      
+      // Auto-rotate to landscape if on a mobile portrait screen
+      if (typeof window !== 'undefined' && window.innerWidth < window.innerHeight && window.innerWidth < 768) {
+        isForceLandscape = true;
+      } else {
+        isForceLandscape = false;
+      }
+      
       resetControlsTimeout();
     } else if (!show) {
       // Reset state when closed
       subtitlesList = [];
       imdbId = null;
       showSubtitleModal = false;
+      isForceLandscape = false;
       prevTmdbId = "";
       clearTimeout(controlsTimeout);
     }
@@ -159,7 +172,11 @@
     transition:fade={{ duration: 200 }} 
     on:click={close}
   >
-    <div class="relative w-full h-full bg-black overflow-hidden rounded-none shadow-2xl" on:click|stopPropagation role="presentation">
+    <div 
+      class="relative bg-black overflow-hidden rounded-none shadow-2xl transition-all duration-300" 
+      style={isForceLandscape ? "width: 100vh; height: 100vw; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg);" : "width: 100%; height: 100%;"}
+      on:click|stopPropagation role="presentation"
+    >
       
       <!-- VIDEO PLAYER (IFRAME ONLY) -->
       {#if tmdbId}
@@ -168,7 +185,7 @@
           src={servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
           title="Movie Player"
           class="w-full h-full border-0 pointer-events-auto bg-black"
-          allow="picture-in-picture; fullscreen"
+          allow="autoplay; picture-in-picture; fullscreen"
           allowfullscreen>
         </iframe>
       {:else}
@@ -190,51 +207,64 @@
 
       <!-- 4. CONTROLS OVERLAY (AUTO-HIDES AFTER 4 SECONDS OR GLASSMORPHISM) -->
       <div 
-        class="pointer-events-none absolute top-0 left-0 w-full p-4 flex flex-col md:flex-row justify-between items-start gap-3 transition-all duration-500 ease-in-out {isControlsVisible ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}"
+        class="pointer-events-none absolute top-0 left-0 w-full p-4 flex justify-end items-start transition-all duration-500 ease-in-out {isControlsVisible ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}"
         style="z-index: 60;"
       >
-        
-        <!-- LEFT SIDE: Server Switcher -->
-        {#if tmdbId}
-          <div class="pointer-events-auto flex items-center gap-2 p-1.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] overflow-x-auto custom-scrollbar max-w-[90vw] md:max-w-[70%]" on:mouseenter={resetControlsTimeout}>
-            <div class="flex items-center gap-2 px-3 border-r border-white/20 shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-red"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-              <span class="text-white/90 text-xs font-bold uppercase tracking-widest hidden sm:inline">Server</span>
+        <div class="pointer-events-auto flex items-center gap-1.5 sm:gap-2 p-1.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]" on:mouseenter={resetControlsTimeout}>
+          
+          {#if tmdbId}
+            <!-- Server Dropdown -->
+            <div class="relative flex items-center shrink-0">
+              <div class="absolute left-2.5 pointer-events-none text-brand-red">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+              </div>
+              <select 
+                class="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs sm:text-sm font-medium py-2 pl-8 pr-7 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red cursor-pointer transition-colors max-w-[120px] sm:max-w-none text-ellipsis"
+                bind:value={selectedServer}
+                on:change={() => resetControlsTimeout()}
+              >
+                {#each servers as server, i}
+                  <option value={i} class="bg-bg-elevated text-white">{server.name}</option>
+                {/each}
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-white/50">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
             </div>
-            <div class="flex gap-2 px-1">
-              {#each servers as server, i}
-                <button 
-                  class="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all duration-300 {selectedServer === i ? 'bg-linear-to-r from-brand-red to-red-500 text-white shadow-[0_4px_12px_rgba(229,9,20,0.4)] border border-transparent' : 'text-white/70 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20'}"
-                  on:click|stopPropagation={() => { selectedServer = i; resetControlsTimeout(); }}
-                >
-                  {server.name}
-                </button>
-              {/each}
-            </div>
-          </div>
-        {:else}
-          <div></div> <!-- Spacer -->
-        {/if}
+            
+            <div class="w-px h-5 bg-white/20 mx-0.5"></div>
+          {/if}
 
-        <!-- RIGHT SIDE: Action Buttons -->
-        <div class="pointer-events-auto flex gap-2 p-1.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] shrink-0 self-end md:self-auto" on:mouseenter={resetControlsTimeout}>
+          <!-- Rotate Button (Mobile Only) -->
+          <button 
+            class="md:hidden text-white/80 hover:text-brand-red hover:bg-white/10 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-1.5"
+            on:click|preventDefault|stopPropagation={() => { isForceLandscape = !isForceLandscape; resetControlsTimeout(); }}
+            title="Putar Layar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.45l5.36 5.36"/></svg>
+            <span class="font-medium hidden sm:inline">Putar</span>
+          </button>
+          
+          <div class="md:hidden w-px h-5 bg-white/20 mx-0.5"></div>
+
           <!-- Cari Subtitle Button -->
           <button 
-            class="text-white/80 hover:text-brand-red hover:bg-white/10 px-3 py-1.5 text-sm rounded-xl transition-colors flex items-center gap-1.5"
+            class="text-white/80 hover:text-brand-red hover:bg-white/10 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-1.5"
             on:click|preventDefault|stopPropagation={fetchSubtitles}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             <span class="font-medium hidden sm:inline">Subtitle</span>
           </button>
-          <div class="w-px bg-white/20 my-1 mx-1"></div>
+
+          <div class="w-px h-5 bg-white/20 mx-0.5"></div>
 
           <!-- Close Button -->
           <button 
-            class="text-white/80 hover:text-brand-red hover:bg-brand-red/20 p-2 rounded-xl transition-colors" 
+            class="text-white/80 hover:text-brand-red hover:bg-brand-red/20 p-1.5 sm:p-2 rounded-xl transition-colors shrink-0" 
             on:click|stopPropagation={close} 
             aria-label="Close modal"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       </div>

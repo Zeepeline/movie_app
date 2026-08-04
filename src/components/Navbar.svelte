@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
-  import { searchMovies, getImageUrl } from '../lib/tmdb';
-  import { user, logout } from '../store/auth';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { getImageUrl, searchMovies } from '../lib/tmdb';
+  import { logout, user } from '../store/auth';
 
   const dispatch = createEventDispatcher();
   let isScrolled = false;
@@ -113,14 +113,14 @@
 
       <div class="relative">
         <button 
-          class="w-8 h-8 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:border-white/50 transition-colors"
+          class="w-8 h-8 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:border-white/50 transition-colors bg-white/10 flex items-center justify-center text-white/60"
           on:click={() => isProfileOpen = !isProfileOpen}
           aria-label="Profile Menu"
         >
           {#if $user && $user.photoURL}
             <img src={$user.photoURL} alt="Profile" class="w-full h-full object-cover" />
           {:else}
-            <img src="https://i.pravatar.cc/150?img=47" alt="Profile" class="w-full h-full object-cover" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           {/if}
         </button>
 
