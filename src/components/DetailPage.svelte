@@ -18,6 +18,9 @@
   let episodes: any[] = [];
   let isEpisodesLoading = false;
 
+  let isComingSoon = false;
+  let isRecentlyReleased = false;
+
   $: {
     if (movie) {
       inWatchlist = isInWatchlist(movie.id);
@@ -28,6 +31,20 @@
     isLoading = true;
     try {
       movie = await getMovieDetailsFull(movieId, mediaType);
+      
+      const releaseDateStr = mediaType === 'tv' ? movie.first_air_date : movie.release_date;
+      if (releaseDateStr) {
+        const releaseDate = new Date(releaseDateStr);
+        const now = new Date();
+        const diffTime = now.getTime() - releaseDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        isComingSoon = diffDays < 0;
+        isRecentlyReleased = diffDays >= 0 && diffDays <= 45;
+      } else {
+        isComingSoon = false;
+        isRecentlyReleased = false;
+      }
       
       // Auto-load episodes if it's a TV series
       if (mediaType === 'tv' && movie.seasons && movie.seasons.length > 0) {
@@ -160,6 +177,25 @@
           <p class="text-lg text-white/80 leading-relaxed mb-8 max-w-3xl">
             {movie.overview}
           </p>
+
+          <!-- Release Warning -->
+          {#if isComingSoon}
+            <div class="mb-6 flex items-start gap-3 bg-brand-red/10 border border-brand-red/30 rounded-lg p-4 text-white max-w-2xl backdrop-blur-sm">
+              <svg class="w-6 h-6 shrink-0 mt-0.5 text-brand-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <div>
+                <p class="font-bold text-brand-red">Belum Rilis / Coming Soon</p>
+                <p class="text-sm opacity-80 mt-1">Video untuk {mediaType === 'tv' ? 'serial' : 'film'} ini belum tersedia karena belum dirilis secara resmi.</p>
+              </div>
+            </div>
+          {:else if isRecentlyReleased}
+            <div class="mb-6 flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-white max-w-2xl backdrop-blur-sm">
+              <svg class="w-6 h-6 shrink-0 mt-0.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <div>
+                <p class="font-bold text-yellow-500">Baru Rilis / In Theaters</p>
+                <p class="text-sm opacity-80 mt-1">Film ini baru tayang dalam waktu dekat (kurang dari 45 hari). Kualitas video mungkin belum tersedia, masih kosong, atau kualitas bioskop (CAM).</p>
+              </div>
+            </div>
+          {/if}
 
           <div class="flex gap-4">
             <button 

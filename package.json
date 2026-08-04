@@ -23,6 +23,8 @@
     "vite": "^8.2.0"
   },
   "dependencies": {
-    "freekeys": "^0.0.4"
+    "freekeys": "^0.0.4",
+    "hls.js": "^1.6.16",
+    "plyr": "^3.8.4"
   }
 }

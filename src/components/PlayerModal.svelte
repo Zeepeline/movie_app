@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
+  import CustomPlayer from './CustomPlayer.svelte';
+  import { getStreamLinks, type StreamData } from '../lib/streamApi';
 
   export let show: boolean = false;
   export let tmdbId: string | number = "";
@@ -11,6 +13,39 @@
   const dispatch = createEventDispatcher();
   
   let isMinimized = false;
+  let isStreamLoading = false;
+  let useFallbackIframe = false;
+  let streamData: StreamData | null = null;
+
+  $: {
+    if (show && tmdbId) {
+      loadStream();
+    } else if (!show) {
+      // Reset state when closed
+      streamData = null;
+      useFallbackIframe = false;
+      isStreamLoading = false;
+    }
+  }
+
+  async function loadStream() {
+    isStreamLoading = true;
+    useFallbackIframe = false;
+    streamData = null;
+
+    try {
+      const data = await getStreamLinks(tmdbId, mediaType, season, episode);
+      if (data) {
+        streamData = data;
+      } else {
+        useFallbackIframe = true;
+      }
+    } catch (e) {
+      useFallbackIframe = true;
+    } finally {
+      isStreamLoading = false;
+    }
+  }
 
   function close() {
     isMinimized = false;
@@ -135,7 +170,18 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="relative w-full h-full bg-black overflow-hidden {isMinimized ? '' : 'rounded-none shadow-2xl'}" on:click|stopPropagation role="presentation">
-      {#if tmdbId}
+      {#if isStreamLoading}
+        <div class="flex flex-col items-center justify-center w-full h-full text-white bg-black gap-4">
+          <svg class="animate-spin h-10 w-10 text-brand-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="font-medium animate-pulse">Menghubungkan ke Server (Bypass Enkripsi)...</p>
+        </div>
+      {:else if streamData}
+        <CustomPlayer sources={streamData.sources} subtitles={streamData.subtitles} />
+      {:else if useFallbackIframe && tmdbId}
+        <!-- FALLBACK KE IFRAME VIDKING -->
         <iframe 
           id="movie-iframe"
           src={mediaType === 'tv' ? `https://www.vidking.net/embed/tv/${tmdbId}/${season || 1}/${episode || 1}` : `https://www.vidking.net/embed/movie/${tmdbId}`} 
@@ -145,8 +191,8 @@
           allowfullscreen>
         </iframe>
       {:else}
-        <div class="flex items-center justify-center w-full h-full text-white">
-          <p>Loading player...</p>
+        <div class="flex items-center justify-center w-full h-full text-white bg-black">
+          <p>Terjadi kesalahan saat memuat video.</p>
         </div>
       {/if}
     </div>
