@@ -155,7 +155,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div 
-    class="fixed z-[100] inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm transition-all duration-500 ease-in-out" 
+    class="fixed z-100 inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm transition-all duration-500 ease-in-out" 
     transition:fade={{ duration: 200 }} 
     on:click={close}
   >
@@ -180,7 +180,7 @@
       <!-- PULL-DOWN HANDLE TO WAKE UP CONTROLS (VISIBLE WHEN CONTROLS ARE HIDDEN) -->
       {#if !isControlsVisible}
         <button 
-          class="absolute top-4 left-1/2 -translate-x-1/2 z-[65] py-2 px-6 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 text-white/70 hover:text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 animate-bounce"
+          class="absolute top-4 left-1/2 -translate-x-1/2 z-65 py-2 px-6 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 text-white/70 hover:text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 animate-bounce"
           on:click|stopPropagation={resetControlsTimeout}
           aria-label="Show controls"
         >

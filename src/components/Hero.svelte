@@ -72,7 +72,7 @@
     {/key}
 
     <div class="w-full max-w-[1600px] mx-auto px-[4%] relative z-10 pt-20">
-      <div class="max-w-125">
+      <div class="max-w-full md:max-w-125">
         <!-- Content Transition -->
         <div class="grid">
           {#key currentIndex}
@@ -81,8 +81,8 @@
               in:fly={{ y: 30, duration: 600, delay: 300 }} 
               out:fade={{ duration: 300 }}
             >
-              <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">{title}</h1>
-              <p class="text-base text-gray-200 mb-8 max-w-100 leading-relaxed line-clamp-3 drop-shadow-md">{description}</p>
+              <h1 class="text-3xl md:text-4xl lg:text-6xl font-extrabold mb-3 md:mb-4 leading-tight drop-shadow-lg">{title}</h1>
+              <p class="text-sm md:text-base text-gray-200 mb-6 md:mb-8 max-w-full md:max-w-100 leading-relaxed line-clamp-3 drop-shadow-md">{description}</p>
             </div>
           {/key}
         </div>

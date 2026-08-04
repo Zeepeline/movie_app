@@ -51,9 +51,9 @@
 
 <nav class={`fixed top-0 left-0 w-full z-50 transition-all duration-300 py-6 bg-linear-to-b from-black/80 to-transparent ${isScrolled ? 'py-4 bg-black/85 backdrop-blur-xl border-b border-white/5' : ''}`}>
   <div class="w-full max-w-[1600px] mx-auto px-[4%] flex items-center justify-between">
-    <div class="flex items-center gap-12">
-      <div class="flex items-center mr-4">
-        <svg viewBox="0 0 100 30" class="w-20 h-6">
+    <div class="flex items-center gap-4 lg:gap-12">
+      <div class="flex items-center mr-0 sm:mr-4">
+        <svg viewBox="0 0 100 30" class="w-16 sm:w-20 h-5 sm:h-6">
           <path d="M0,30 L10,0 L25,0 L35,20 L45,0 L60,0 L70,30 L55,30 L48,15 L42,30 L30,30 L23,15 L15,30 Z" fill="white"/>
           <circle cx="85" cy="15" r="12" fill="none" stroke="white" stroke-width="4"/>
           <circle cx="115" cy="15" r="12" fill="none" stroke="white" stroke-width="4"/>
@@ -68,14 +68,14 @@
       </ul>
     </div>
     
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-3 sm:gap-6">
       <!-- Search Component -->
       <div class="relative flex items-center">
         <button class="text-white/80 hover:text-white transition-opacity z-10" aria-label="Search" on:click={() => isSearchOpen = !isSearchOpen}>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
         
-        <div class={`overflow-hidden transition-all duration-300 ease-in-out ${isSearchOpen ? 'w-48 ml-2 opacity-100' : 'w-0 opacity-0'}`}>
+        <div class={`overflow-hidden transition-all duration-300 ease-in-out ${isSearchOpen ? 'w-32 sm:w-48 ml-2 opacity-100' : 'w-0 opacity-0'}`}>
           <input 
             type="text" 
             bind:value={searchQuery} 
@@ -85,7 +85,7 @@
         </div>
 
         {#if isSearchOpen && (searchResults.length > 0 || isSearching || searchQuery.trim().length > 2)}
-          <div class="absolute top-12 right-0 w-72 bg-bg-elevated border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[60vh]">
+          <div class="absolute top-12 right-0 w-[80vw] sm:w-72 max-w-sm bg-bg-elevated border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[60vh]">
             {#if isSearching}
               <div class="p-4 text-center text-sm text-text-muted">Searching...</div>
             {:else if searchResults.length > 0}
