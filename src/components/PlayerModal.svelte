@@ -25,19 +25,26 @@
 
   let selectedServer = 0;
   const servers = [
-    { name: 'Server 1 (Vidsrc - Best Subs)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s||1}&episode=${e||1}` : `https://vidsrc.me/embed/movie?tmdb=${id}` },
-    { name: 'Server 2 (AutoEmbed)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}` : `https://autoembed.co/movie/tmdb/${id}` },
+    { name: 'Server 1 (AutoEmbed - Default)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}` : `https://autoembed.co/movie/tmdb/${id}` },
+    { name: 'Server 2 (Vidsrc - Best Subs)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s||1}&episode=${e||1}` : `https://vidsrc.me/embed/movie?tmdb=${id}` },
     { name: 'Server 3 (Vidking)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.vidking.net/embed/tv/${id}/${s||1}/${e||1}` : `https://www.vidking.net/embed/movie/${id}` }
   ];
 
   $: {
     if (show && tmdbId) {
+      // Reset state saat membuka film baru
+      subtitlesList = [];
+      imdbId = null;
+      showSubtitleModal = false;
       loadStream();
     } else if (!show) {
       // Reset state when closed
       streamData = null;
       useFallbackIframe = false;
       isStreamLoading = false;
+      subtitlesList = [];
+      imdbId = null;
+      showSubtitleModal = false;
     }
   }
 

@@ -14,11 +14,6 @@ export interface StreamData {
   subtitles: Subtitle[];
 }
 
-/**
- * Mencoba mengambil link video mentah dan subtitle dari Public Scraper API (Consumet).
- * Karena ini adalah API publik gratis, sering kali terjadi error/CORS/Down.
- * Jika fungsi ini me-return null, sistem akan otomatis menggunakan Iframe (Vidking).
- */
 export async function getStreamLinks(
   tmdbId: string | number,
   type: string = "movie",
@@ -26,57 +21,49 @@ export async function getStreamLinks(
   episode?: number,
 ): Promise<StreamData | null> {
   try {
-    // Catatan: URL ini adalah contoh instance Consumet publik.
-    // Jika Vercel app ini mati, Anda bisa menggantinya dengan URL backend Consumet Anda sendiri.
-    const baseUrl = "https://consumet-api-clone.vercel.app/meta/tmdb";
+    // 1. Ambil informasi film/series dasar dari TMDB untuk mendapatkan title & releaseYear
+    const tmdbApiUrl = `https://api.themoviedb.org/3/${type === "tv" ? "tv" : "movie"}/${tmdbId}?api_key=4b8c9c4021ba0928e3fa0ebbf7cd9107`;
+    const tmdbRes = await fetch(tmdbApiUrl);
+    if (!tmdbRes.ok) throw new Error("TMDB fetch failed");
+    const tmdbData = await tmdbRes.json();
 
-    const infoUrl = `${baseUrl}/info/${tmdbId}?type=${type}`;
-    const infoRes = await fetch(infoUrl, {
-      // timeout agar tidak menunggu terlalu lama jika API mati
-      signal: AbortSignal.timeout(5000),
-    });
+    const title = tmdbData.title || tmdbData.name || "Movie";
+    const releaseYear = (
+      tmdbData.release_date ||
+      tmdbData.first_air_date ||
+      "2024"
+    ).substring(0, 4);
 
-    if (!infoRes.ok) return null;
-
-    const infoData = await infoRes.json();
-
-    let episodeId = infoData.id;
-
-    // Jika ini TV Series, kita harus mencari episodeId yang tepat
-    if (type === "tv" && season && episode && infoData.seasons) {
-      const targetSeason = infoData.seasons.find(
-        (s: any) => s.season === season,
-      );
-      if (targetSeason && targetSeason.episodes) {
-        const targetEpisode = targetSeason.episodes.find(
-          (e: any) => e.episode === episode,
-        );
-        if (targetEpisode) {
-          episodeId = targetEpisode.id;
-        }
-      }
+    // 2. Tembak ke Backend Scraper (movie-web) lokal kita
+    let scrapeUrl = `http://localhost:3000/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
+    if (type === "tv" && season && episode) {
+      scrapeUrl += `&season=${season}&episode=${episode}`;
     }
 
-    // Mengambil stream (m3u8) berdasarkan episodeId
-    const watchUrl = `${baseUrl}/watch/${episodeId}?id=${infoData.id}`;
-    const watchRes = await fetch(watchUrl, {
-      signal: AbortSignal.timeout(5000),
+    const scrapeRes = await fetch(scrapeUrl, {
+      signal: AbortSignal.timeout(10000), // tunggu max 10 detik
     });
 
-    if (!watchRes.ok) return null;
-    const watchData = await watchRes.json();
+    if (!scrapeRes.ok) return null;
+    const scrapeData = await scrapeRes.json();
 
-    if (watchData.sources && watchData.sources.length > 0) {
+    if (scrapeData.success && scrapeData.streamUrl) {
       return {
-        sources: watchData.sources,
-        subtitles: watchData.subtitles || [],
+        sources: [
+          {
+            url: scrapeData.streamUrl,
+            quality: "auto",
+            isM3U8: scrapeData.streamUrl.includes(".m3u8"),
+          },
+        ],
+        subtitles: scrapeData.captions || [],
       };
     }
 
     return null;
   } catch (error) {
     console.warn(
-      "Public API Scraper gagal atau diblokir CORS. Menggunakan mode Fallback (Iframe).",
+      "Backend Scraper lokal gagal atau tidak ditemukan stream. Menggunakan mode Fallback (Iframe).",
     );
     return null;
   }

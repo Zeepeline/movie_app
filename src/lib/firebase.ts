@@ -19,16 +19,18 @@ const app = initializeApp(firebaseConfig);
 let analytics: any;
 if (typeof window !== "undefined") {
   // Use dynamic import so adblockers won't crash the entire app
-  import("firebase/analytics").then(({ getAnalytics }) => {
-    try {
-      analytics = getAnalytics(app);
-      console.log("Firebase Analytics initialized");
-    } catch (e) {
-      console.error("Firebase Analytics failed to initialize", e);
-    }
-  }).catch(e => {
-    console.warn("Firebase Analytics blocked by Content Blocker:", e);
-  });
+  import("firebase/analytics")
+    .then(({ getAnalytics }) => {
+      try {
+        analytics = getAnalytics(app);
+        console.log("Firebase Analytics initialized");
+      } catch (e) {
+        console.error("Firebase Analytics failed to initialize", e);
+      }
+    })
+    .catch((e) => {
+      console.warn("Firebase Analytics blocked by Content Blocker:", e);
+    });
 }
 
 // Initialize Auth
