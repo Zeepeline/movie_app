@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { getImageUrl, getMovieDetailsFull, getTvSeasonDetails } from '../lib/tmdb';
-  import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
-  import MovieCard from '../components/MovieCard.svelte';
-  import { historyStore } from '../store/history';
   import { fade } from 'svelte/transition';
+  import MovieCard from '../components/MovieCard.svelte';
+  import { getImageUrl, getMovieDetailsFull, getTvSeasonDetails } from '../lib/tmdb';
+  import { historyStore } from '../store/history';
+  import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
 
   export let movieId: number | string;
   export let mediaType: string = 'movie';
