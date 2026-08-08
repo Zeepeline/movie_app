@@ -1,6 +1,13 @@
+/// <reference types="vite-plugin-pwa/client" />
 import { mount } from "svelte";
 import "./app.css";
 import App from "./App.svelte";
+import { registerSW } from 'virtual:pwa-register';
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  registerSW({ immediate: true });
+}
 
 console.log("Executing main.ts - if you see this, JS is running!");
 

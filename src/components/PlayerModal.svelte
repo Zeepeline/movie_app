@@ -452,7 +452,7 @@
                 {#each downloadsList as stream}
                   <div class="flex flex-col p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300">
                     <div class="flex flex-col gap-1 mb-2">
-                      <span class="text-white font-medium text-sm break-words leading-snug">{stream.title.split('\n')[0]}</span>
+                      <span class="text-white font-medium text-sm wrap-break-word leading-snug">{stream.title.split('\n')[0]}</span>
                       <span class="text-brand-red text-xs font-bold">{stream.name}</span>
                       <span class="text-white/60 text-xs">{stream.title.split('\n').slice(1).join(' | ')}</span>
                     </div>

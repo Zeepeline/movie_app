@@ -75,7 +75,11 @@
     }
   }
 
-  onMount(async () => {
+  $: if (movieId || mediaType) {
+    fetchMovieData();
+  }
+
+  async function fetchMovieData() {
     isLoading = true;
     try {
       movie = await getMovieDetailsFull(movieId, mediaType);
@@ -116,7 +120,7 @@
     } finally {
       isLoading = false;
     }
-  });
+  }
 
   async function loadEpisodes(seasonNum: number | null) {
     if (seasonNum === null || !movie) return;
@@ -153,9 +157,9 @@
     });
   }
 
-  function handleRelatedMovieDetail(event: CustomEvent<{ id: string | number }>) {
+  function handleRelatedMovieDetail(event: CustomEvent<{ id: string | number, type?: string }>) {
     // Navigate to new detail page
-    dispatch('detail', { id: event.detail.id });
+    dispatch('detail', { id: event.detail.id, type: event.detail.type });
   }
 
   function toggleWatchlist() {
@@ -414,7 +418,7 @@
             class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory pb-4 {isFetchingReviews ? 'opacity-50 pointer-events-none' : ''} transition-opacity duration-300"
           >
             {#each reviews as review}
-              <div class="group relative bg-white/2 border border-white/5 hover:border-white/10 p-6 rounded-3xl transition-all duration-300 hover:bg-white/4 overflow-hidden shrink-0 snap-start w-[300px] md:w-[400px]">
+              <div class="group relative bg-white/2 border border-white/5 hover:border-white/10 p-6 rounded-3xl transition-all duration-300 hover:bg-white/4 overflow-hidden shrink-0 snap-start w-75 md:w-100">
                 <!-- Decorative Quote Icon -->
                 <svg class="absolute top-4 right-4 w-16 h-16 text-white/3 group-hover:text-white/6 transition-colors duration-500 rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
                 
@@ -466,7 +470,7 @@
                 rating={similarMovie.vote_average || 0}
                 type={similarMovie.media_type || 'Movie'}
                 year={(similarMovie.release_date || similarMovie.first_air_date || '').substring(0, 4)}
-                on:play={handleRelatedMovieDetail}
+                on:detail={handleRelatedMovieDetail}
               />
             {/each}
           </div>

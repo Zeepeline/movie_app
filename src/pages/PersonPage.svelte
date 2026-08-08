@@ -77,7 +77,7 @@
       <div class="flex flex-col md:flex-row gap-8 lg:gap-12 mb-16">
         <!-- Profile Picture -->
         <div class="w-full md:w-1/3 lg:w-1/4 shrink-0">
-          <div class="rounded-2xl overflow-hidden shadow-2xl aspect-[2/3] bg-bg-elevated border border-white/10">
+          <div class="rounded-2xl overflow-hidden shadow-2xl aspect-2/3 bg-bg-elevated border border-white/10">
             {#if person.profile_path}
               <img src={getImageUrl(person.profile_path, 'w780')} alt={person.name} class="w-full h-full object-cover" />
             {:else}
@@ -138,7 +138,7 @@
               
               {#if currentYear !== prevYear}
                 <div class="relative pl-8 md:pl-12 pt-6 pb-2">
-                  <div class="absolute left-[-11px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-bg-base border-[4px] border-brand-red z-10 shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
+                  <div class="absolute -left-2.75 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-bg-base border-4 border-brand-red z-10 shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
                   <div class="flex items-center gap-4">
                     <h3 class="text-2xl md:text-3xl font-black text-white/90 tracking-wider shrink-0">{currentYear}</h3>
                     <div class="h-px flex-1 bg-white/10 mt-1 rounded-full"></div>
@@ -151,12 +151,12 @@
                 on:click={() => dispatch('detail', { id: movie.id, type: movie.media_type })}
               >
                 <!-- Timeline Dot -->
-                <div class="absolute left-[-6px] top-6 w-3 h-3 rounded-full bg-white/20 group-hover:bg-brand-red group-hover:scale-150 transition-all duration-300"></div>
+                <div class="absolute -left-1.5 top-6 w-3 h-3 rounded-full bg-white/20 group-hover:bg-brand-red group-hover:scale-150 transition-all duration-300"></div>
                 
                 <!-- Content Card -->
                 <div class="flex items-start gap-4 md:gap-6 bg-white/5 hover:bg-white/10 p-3 md:p-4 rounded-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-xl">
                   <!-- Small Poster -->
-                  <div class="w-16 md:w-20 aspect-[2/3] shrink-0 rounded-lg overflow-hidden bg-bg-elevated shadow-md">
+                  <div class="w-16 md:w-20 aspect-2/3 shrink-0 rounded-lg overflow-hidden bg-bg-elevated shadow-md">
                     <img src={getImageUrl(movie.poster_path, 'w500')} alt={movie.title || movie.name} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
                   
