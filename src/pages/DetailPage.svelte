@@ -423,6 +423,7 @@
         <button 
           class="absolute top-4 right-4 z-10 text-white/70 hover:text-white bg-black/50 hover:bg-brand-red p-2 rounded-full transition-colors backdrop-blur-md"
           on:click={() => showTrailerModal = false}
+          aria-label="Tutup trailer"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>

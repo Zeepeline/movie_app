@@ -2,7 +2,6 @@
   import { createEventDispatcher } from 'svelte';
   export let title: string = "Movie Title";
   export let imageUrl: string = "https://via.placeholder.com/400x225/333333/ffffff?text=Poster";
-  export let progressPercentage: number = 45;
   export let movieId: number | string = "";
   export let type: string = "movie";
 
@@ -34,7 +33,4 @@
     </button>
   </div>
 
-  <div class="absolute bottom-0 left-0 w-full h-1 bg-white/20">
-    <div class="h-full bg-brand-red" style="width: {progressPercentage}%"></div>
-  </div>
 </div>

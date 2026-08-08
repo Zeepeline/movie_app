@@ -1,42 +1,41 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import CategoryFilter from '../components/CategoryFilter.svelte';
   import MovieCard from '../components/MovieCard.svelte';
-  import { getImageUrl, getMoviesByGenre } from '../lib/tmdb';
+  import CategoryFilter from '../components/CategoryFilter.svelte';
+  import { getImageUrl, getKidsMovies } from '../lib/tmdb';
 
   const dispatch = createEventDispatcher();
   
-  let selectedGenre: { id: number | null, name: string } = { id: null, name: 'All Movies' };
-  let selectedYear: string = "";
-  let genreMovies: any[] = [];
-  let isGenreLoading = false;
-  let genrePage = 1;
+  let movies: any[] = [];
+  let isLoading = false;
+  let page = 1;
   let isLoadingMore = false;
+  let selectedYear: string = "";
 
-  async function handleFilter(event: CustomEvent<{ genre: { id: number | null, name: string }, year: string }>) {
-    selectedGenre = event.detail.genre;
-    selectedYear = event.detail.year;
-    isGenreLoading = true;
-    genrePage = 1;
+  async function handleFilter(event?: CustomEvent<{ year: string }>) {
+    if (event) {
+      selectedYear = event.detail.year;
+    }
     
+    isLoading = true;
+    page = 1;
     try {
-      genreMovies = await getMoviesByGenre(selectedGenre.id, genrePage, selectedYear);
+      movies = await getKidsMovies(page, selectedYear);
     } catch(e) {
       console.error(e);
     } finally {
-      isGenreLoading = false;
+      isLoading = false;
     }
   }
 
-  // Initial load
   onMount(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    handleFilter(new CustomEvent('filter', { detail: { genre: selectedGenre, year: selectedYear } }));
+    handleFilter();
   });
 
   function infiniteScroll(node: HTMLElement) {
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !isLoadingMore && !isGenreLoading) {
+      if (entries[0].isIntersecting && !isLoadingMore && !isLoading) {
         loadMore();
       }
     }, { rootMargin: '100px' });
@@ -55,9 +54,9 @@
     isLoadingMore = true;
     
     try {
-      genrePage++;
-      const newMovies = await getMoviesByGenre(selectedGenre.id, genrePage, selectedYear);
-      genreMovies = [...genreMovies, ...newMovies];
+      page++;
+      const newMovies = await getKidsMovies(page, selectedYear);
+      movies = [...movies, ...newMovies];
     } catch(e) {
       console.error("Gagal load more:", e);
     } finally {
@@ -66,31 +65,31 @@
   }
 
   function handleDetail(event: CustomEvent<{ id: string | number }>) {
-    dispatch('detail', { id: event.detail.id });
+    dispatch('detail', { id: event.detail.id, type: 'movie' });
   }
 </script>
 
 <div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-24 animate-fade-in relative z-10">
   <div class="w-full max-w-[1600px] mx-auto px-[4%]">
     <div class="mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold mb-2">Explore Movies</h1>
-      <p class="text-text-muted">Find your favorite movies by genre.</p>
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">Kids & Family</h1>
+      <p class="text-text-muted">Fun movies and shows for the whole family.</p>
     </div>
 
     <!-- The Filter -->
     <div class="mb-8">
-      <CategoryFilter on:filter={handleFilter} />
+      <CategoryFilter showGenres={false} on:filter={handleFilter} />
     </div>
 
     <!-- The Grid -->
     <section class="w-full mb-8">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
-        {#if isGenreLoading}
+        {#if isLoading}
           {#each Array(12) as _}
             <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
           {/each}
         {:else}
-          {#each genreMovies as movie}
+          {#each movies as movie}
             <MovieCard 
               movieId={movie.id}
               title={movie.title || movie.name}

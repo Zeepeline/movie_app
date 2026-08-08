@@ -10,6 +10,7 @@
   import LoginPage from "./pages/LoginPage.svelte";
   import MoviesPage from "./pages/MoviesPage.svelte";
   import SeriesPage from "./pages/SeriesPage.svelte";
+  import KidsPage from "./pages/KidsPage.svelte";
   import WatchlistPage from "./pages/WatchlistPage.svelte";
   import { historyStore, addToHistory } from './store/history';
 
@@ -24,6 +25,19 @@
   let topRatedPage = 1;
 
   onMount(async () => {
+    // Parse URL parameters for initial state (e.g. from open in new tab)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMovieId = urlParams.get('movie');
+    const urlType = urlParams.get('type');
+    const urlPage = urlParams.get('page');
+
+    if (urlMovieId) {
+      detailMovieId = urlMovieId;
+      detailMediaType = urlType || 'movie';
+    } else if (urlPage) {
+      currentPage = urlPage;
+    }
+
     // History API setup
     window.addEventListener('popstate', (e) => {
       const state = e.state;
@@ -44,7 +58,7 @@
       }
     });
 
-    history.replaceState({ page: currentPage, detailMovieId, detailMediaType, showPlayer }, '');
+    history.replaceState({ page: currentPage, detailMovieId, detailMediaType, showPlayer }, '', getUrlForState(currentPage, detailMovieId, detailMediaType));
 
     isLoading = true;
     try {
@@ -75,16 +89,34 @@
   let currentPage = 'home';
   let detailMediaType: string = 'movie';
 
+  function getUrlForState(page: string, movieId: string | number | null, mediaType: string) {
+    const url = new URL(window.location.href);
+    if (movieId) {
+      url.searchParams.set('movie', movieId.toString());
+      url.searchParams.set('type', mediaType);
+      url.searchParams.delete('page');
+    } else {
+      url.searchParams.delete('movie');
+      url.searchParams.delete('type');
+      if (page !== 'home') {
+        url.searchParams.set('page', page);
+      } else {
+        url.searchParams.delete('page');
+      }
+    }
+    return url.pathname + url.search;
+  }
+
   function openDetail(event: CustomEvent<{ id: string | number, type?: string }>) {
     detailMovieId = event.detail.id;
     detailMediaType = event.detail.type?.toLowerCase() || 'movie';
-    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: false }, '');
+    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: false }, '', getUrlForState(currentPage, detailMovieId, detailMediaType));
   }
 
   function handleNavigate(event: CustomEvent<{ page: string }>) {
     currentPage = event.detail.page;
     detailMovieId = null;
-    history.pushState({ page: currentPage, detailMovieId: null, showPlayer: false }, '');
+    history.pushState({ page: currentPage, detailMovieId: null, showPlayer: false }, '', getUrlForState(currentPage, null, detailMediaType));
   }
 
   function openPlayer(event: CustomEvent<{ id: string | number, type?: string, season?: number, episode?: number, title?: string, imageUrl?: string }>) {
@@ -95,7 +127,7 @@
       episode: event.detail.episode
     };
     showPlayer = true;
-    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: true, playerOptions }, '');
+    history.pushState({ page: currentPage, detailMovieId, detailMediaType, showPlayer: true, playerOptions }, '', getUrlForState(currentPage, detailMovieId, detailMediaType));
     
     if (event.detail.title && event.detail.imageUrl) {
       addToHistory({
@@ -123,10 +155,11 @@
 <main class={currentPage === 'login' ? '' : 'pb-16'}>
   {#if currentPage !== 'login' && !detailMovieId}
     <Navbar 
+      currentPage={currentPage}
       on:play={openPlayer} 
       on:detail={openDetail} 
       on:navigate={handleNavigate}
-      on:openWatchlist={() => { currentPage = 'watchlist'; detailMovieId = null; history.pushState({ page: 'watchlist', detailMovieId: null }, ''); }} 
+      on:openWatchlist={() => { currentPage = 'watchlist'; detailMovieId = null; history.pushState({ page: 'watchlist', detailMovieId: null }, '', getUrlForState('watchlist', null, 'movie')); }} 
     />
   {/if}
   
@@ -140,13 +173,15 @@
     />
   {:else if currentPage === 'watchlist'}
     <WatchlistPage 
-      on:back={() => { if (history.state?.page === 'watchlist') history.back(); else { currentPage = 'home'; history.pushState({ page: 'home' }, ''); } }}
+      on:back={() => { if (history.state?.page === 'watchlist') history.back(); else { currentPage = 'home'; history.pushState({ page: 'home' }, '', getUrlForState('home', null, 'movie')); } }}
       on:detail={openDetail}
     />
   {:else if currentPage === 'movies'}
     <MoviesPage on:detail={openDetail} />
   {:else if currentPage === 'series'}
     <SeriesPage on:detail={openDetail} />
+  {:else if currentPage === 'kids'}
+    <KidsPage on:detail={openDetail} />
   {:else if currentPage === 'login'}
     <LoginPage 
       on:loginSuccess={() => { currentPage = 'home'; }}
@@ -190,16 +225,17 @@
     {#if nowPlayingMovies.length > 0}
       <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
           <h2 class="text-xl font-bold text-white mb-4">Now Playing</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 lg:max-w-[70%]">
-            {#each nowPlayingMovies as movie}
-              <ContinueWatchingCard 
-                movieId={movie.id}
-                title={movie.title}
-                imageUrl={movie.imageUrl?.startsWith('http') ? movie.imageUrl : getImageUrl(movie.imageUrl, 'w780')}
-                progressPercentage={50}
-                type={movie.type}
-                on:play={openPlayer}
-              />
+          <div class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory py-2 mx-[-4%] px-[4%]">
+            {#each nowPlayingMovies.slice(0, 6) as movie}
+              <div class="snap-start shrink-0 w-65 sm:w-[320px] lg:w-100">
+                <ContinueWatchingCard 
+                  movieId={movie.id}
+                  title={movie.title}
+                  imageUrl={movie.imageUrl?.startsWith('http') ? movie.imageUrl : getImageUrl(movie.imageUrl, 'w780')}
+                  type={movie.type}
+                  on:play={openPlayer}
+                />
+              </div>
             {/each}
         </div>
       </section>
@@ -210,7 +246,7 @@
     <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-white">Top Rated Movies</h2>
-        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, ''); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
+        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, '', getUrlForState('movies', null, 'movie')); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
@@ -236,7 +272,7 @@
     <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-white">Film Indonesia</h2>
-        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, ''); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
+        <button on:click={() => { currentPage = 'movies'; history.pushState({ page: 'movies' }, '', getUrlForState('movies', null, 'movie')); }} class="text-sm font-medium text-text-muted hover:text-white transition-colors cursor-pointer">See more &rarr;</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}

@@ -7,23 +7,20 @@
   const dispatch = createEventDispatcher();
   
   let selectedGenre: { id: number | null, name: string } = { id: null, name: 'All Series' };
+  let selectedYear: string = "";
   let genreSeries: any[] = [];
   let isGenreLoading = false;
   let genrePage = 1;
   let isLoadingMore = false;
 
-  async function handleGenreSelect(event: CustomEvent<{ id: number | null, name: string }>) {
-    selectedGenre = event.detail;
+  async function handleFilter(event: CustomEvent<{ genre: { id: number | null, name: string }, year: string }>) {
+    selectedGenre = event.detail.genre;
+    selectedYear = event.detail.year;
     isGenreLoading = true;
     genrePage = 1;
     
     try {
-      if (selectedGenre && selectedGenre.id !== null) {
-        genreSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage);
-      } else {
-        const { getTopRatedTvSeries } = await import('../lib/tmdb');
-        genreSeries = await getTopRatedTvSeries(genrePage);
-      }
+      genreSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear);
     } catch(e) {
       console.error(e);
     } finally {
@@ -34,7 +31,7 @@
   // Initial load
   onMount(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    handleGenreSelect(new CustomEvent('select', { detail: selectedGenre }));
+    handleFilter(new CustomEvent('filter', { detail: { genre: selectedGenre, year: selectedYear } }));
   });
 
   function infiniteScroll(node: HTMLElement) {
@@ -59,14 +56,8 @@
     
     try {
       genrePage++;
-      if (selectedGenre && selectedGenre.id !== null) {
-        const newSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage);
-        genreSeries = [...genreSeries, ...newSeries];
-      } else {
-        const { getTopRatedTvSeries } = await import('../lib/tmdb');
-        const newSeries = await getTopRatedTvSeries(genrePage);
-        genreSeries = [...genreSeries, ...newSeries];
-      }
+      const newSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear);
+      genreSeries = [...genreSeries, ...newSeries];
     } catch(e) {
       console.error("Gagal load more:", e);
     } finally {
@@ -90,7 +81,7 @@
     <!-- The Filter -->
     <div class="mb-8">
       <!-- Note: We could use a specific TV CategoryFilter here, but reusing the existing one for now -->
-      <CategoryFilter on:select={handleGenreSelect} />
+      <CategoryFilter mediaType="tv" on:filter={handleFilter} />
     </div>
 
     <!-- The Grid -->

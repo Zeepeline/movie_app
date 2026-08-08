@@ -16,11 +16,10 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div 
-  class="relative rounded-xl overflow-hidden aspect-2/3 bg-bg-elevated cursor-pointer transition-transform duration-300 shadow-lg hover:scale-105 hover:z-10 hover:shadow-2xl group"
-  on:click={handleClick}
-  role="button"
-  tabindex="0"
+<a 
+  href={`/?movie=${movieId}&type=${type}`}
+  class="relative rounded-xl overflow-hidden aspect-2/3 bg-bg-elevated cursor-pointer transition-transform duration-300 shadow-lg hover:scale-105 hover:z-10 hover:shadow-2xl group block"
+  on:click|preventDefault={handleClick}
 >
   <img src={imageUrl} alt={title} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
   
@@ -44,4 +43,4 @@
       {/if}
     </div>
   </div>
-</div>
+</a>

@@ -51,6 +51,14 @@ export async function getIndonesianMovies(page: number = 1): Promise<Media[]> {
   return data.results || [];
 }
 
+export async function getKidsMovies(page: number = 1, year: string | null = null): Promise<Media[]> {
+  // 16 is Animation, 10751 is Family
+  let url = `/discover/movie?with_genres=16,10751&page=${page}`;
+  if (year) url += `&primary_release_year=${year}`;
+  const data = await fetchTMDB<PaginatedResponse<Media>>(url);
+  return data.results || [];
+}
+
 export async function searchMovies(query: string): Promise<Media[]> {
   if (!query || query.trim() === "") return [];
   const data = await fetchTMDB<PaginatedResponse<Media>>(
@@ -59,15 +67,17 @@ export async function searchMovies(query: string): Promise<Media[]> {
   return data.results || [];
 }
 
-export async function getGenres(): Promise<Genre[]> {
-  const data = await fetchTMDB<{ genres: Genre[] }>("/genre/movie/list");
+export async function getGenres(mediaType: 'movie' | 'tv' = 'movie'): Promise<Genre[]> {
+  const data = await fetchTMDB<{ genres: Genre[] }>(`/genre/${mediaType}/list`);
   return data.genres || [];
 }
 
-export async function getMoviesByGenre(genreId: number, page: number = 1): Promise<Media[]> {
-  const data = await fetchTMDB<PaginatedResponse<Media>>(
-    `/discover/movie?with_genres=${genreId}&page=${page}`,
-  );
+export async function getMoviesByGenre(genreId: number | null, page: number = 1, year: string | null = null): Promise<Media[]> {
+  let url = `/discover/movie?page=${page}`;
+  if (genreId) url += `&with_genres=${genreId}`;
+  if (year) url += `&primary_release_year=${year}`;
+  
+  const data = await fetchTMDB<PaginatedResponse<Media>>(url);
   return data.results || [];
 }
 
@@ -76,10 +86,12 @@ export async function getTopRatedTvSeries(page: number = 1): Promise<Media[]> {
   return data.results || [];
 }
 
-export async function getTvSeriesByGenre(genreId: number, page: number = 1): Promise<Media[]> {
-  const data = await fetchTMDB<PaginatedResponse<Media>>(
-    `/discover/tv?with_genres=${genreId}&page=${page}`,
-  );
+export async function getTvSeriesByGenre(genreId: number | null, page: number = 1, year: string | null = null): Promise<Media[]> {
+  let url = `/discover/tv?page=${page}`;
+  if (genreId) url += `&with_genres=${genreId}`;
+  if (year) url += `&first_air_date_year=${year}`;
+  
+  const data = await fetchTMDB<PaginatedResponse<Media>>(url);
   return data.results || [];
 }
 

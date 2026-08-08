@@ -236,7 +236,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
               </div>
               <select 
-                class="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs sm:text-sm font-medium py-2 pl-8 pr-7 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red cursor-pointer transition-colors max-w-[120px] sm:max-w-none text-ellipsis"
+                class="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs sm:text-sm font-medium py-2 pl-8 pr-7 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red cursor-pointer transition-colors max-w-30 sm:max-w-none text-ellipsis"
                 bind:value={selectedServer}
                 on:change={() => resetControlsTimeout()}
               >

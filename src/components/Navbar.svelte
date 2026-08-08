@@ -3,6 +3,8 @@
   import { getImageUrl, searchMovies } from '../lib/tmdb';
   import { logout, user } from '../store/auth';
 
+  export let currentPage: string = 'home';
+
   const dispatch = createEventDispatcher();
   let isScrolled = false;
   let isSearchOpen = false;
@@ -61,10 +63,10 @@
       </div>
       
       <ul class="hidden md:flex list-none gap-8">
-      <li><button on:click={() => dispatch('navigate', { page: 'home' })} class="text-sm font-medium text-white transition-colors">Home</button></li>
-      <li><button on:click={() => dispatch('navigate', { page: 'movies' })} class="text-sm font-medium text-text-muted hover:text-white transition-colors">Movies</button></li>
-      <li><button on:click={() => dispatch('navigate', { page: 'series' })} class="text-sm font-medium text-text-muted hover:text-white transition-colors">Series</button></li>
-      <li><button on:click={() => dispatch('navigate', { page: 'kids' })} class="text-sm font-medium text-text-muted hover:text-white transition-colors">Kids</button></li>
+        <li><button on:click={() => dispatch('navigate', { page: 'home' })} class={`text-sm font-medium transition-colors ${currentPage === 'home' ? 'text-white' : 'text-text-muted hover:text-white'}`}>Home</button></li>
+        <li><button on:click={() => dispatch('navigate', { page: 'movies' })} class={`text-sm font-medium transition-colors ${currentPage === 'movies' ? 'text-white' : 'text-text-muted hover:text-white'}`}>Movies</button></li>
+        <li><button on:click={() => dispatch('navigate', { page: 'series' })} class={`text-sm font-medium transition-colors ${currentPage === 'series' ? 'text-white' : 'text-text-muted hover:text-white'}`}>Series</button></li>
+        <li><button on:click={() => dispatch('navigate', { page: 'kids' })} class={`text-sm font-medium transition-colors ${currentPage === 'kids' ? 'text-white' : 'text-text-muted hover:text-white'}`}>Kids</button></li>
       </ul>
     </div>
     
