@@ -52,7 +52,7 @@ historyStore.subscribe(async (value) => {
 export function addToHistory(item: Omit<HistoryItem, 'timestamp'>) {
   historyStore.update(items => {
     // Remove existing entry if any to move it to the front
-    const filtered = items.filter(i => i.id !== item.id);
+    const filtered = items.filter(i => String(i.id) !== String(item.id));
     const newItem = { ...item, timestamp: Date.now() };
     return [newItem, ...filtered].slice(0, 50); // Keep max 50 history items
   });

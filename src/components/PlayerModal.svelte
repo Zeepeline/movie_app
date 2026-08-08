@@ -16,6 +16,11 @@
   let isFetchingSubtitles = false;
   let subtitlesList: any[] = [];
   let imdbId: string | null = null;
+  
+  // Downloads State
+  let showDownloadModal = false;
+  let isFetchingDownloads = false;
+  let downloadsList: any[] = [];
 
   // Auto-hide controls
   let isControlsVisible = true;
@@ -35,11 +40,19 @@
   const servers = [
     { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}?autoplay=1` : `https://autoembed.co/movie/tmdb/${id}?autoplay=1` },
     { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
-    { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s||1}&episode=${e||1}&autoplay=1` : `https://vidsrc.me/embed/movie?tmdb=${id}&autoplay=1` },
-    { name: 'Videasy', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.to/embed/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidsrc.to/embed/movie/${id}?autoplay=1` },
+    { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.me/embed/movie/${id}` },
+    { name: 'Videasy', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.to/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.to/embed/movie/${id}` },
     { name: 'SuperEmbed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s||1}&e=${e||1}&autoplay=1` : `https://multiembed.mov/?video_id=${id}&tmdb=1&autoplay=1` },
     { name: 'SmashyStream', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://player.smashy.stream/tv/?tmdb=${id}&season=${s||1}&episode=${e||1}&autoplay=1` : `https://player.smashy.stream/movie/?tmdb=${id}&autoplay=1` },
-    { name: '2Embed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.2embed.cc/embedtv/${id}&s=${s||1}&e=${e||1}&autoplay=1` : `https://www.2embed.cc/embed/${id}?autoplay=1` }
+    { name: '2Embed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.2embed.cc/embedtv/${id}&s=${s||1}&e=${e||1}&autoplay=1` : `https://www.2embed.cc/embed/${id}?autoplay=1` },
+    { name: 'VidBinge', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidbinge.dev/embed/tv/${id}/${s||1}/${e||1}` : `https://vidbinge.dev/embed/movie/${id}` },
+    { name: 'Vidsrc.net', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.net/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.net/embed/movie/${id}` },
+    { name: 'Vidsrc.in', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.in/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.in/embed/movie/${id}` },
+    { name: 'MoviesAPI', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://moviesapi.club/tv/${id}-${s||1}-${e||1}` : `https://moviesapi.club/movie/${id}` },
+    { name: 'GDrivePlayer', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://databasegdriveplayer.co/player.php?type=series&tmdb=${id}&season=${s||1}&episode=${e||1}` : `https://databasegdriveplayer.co/player.php?tmdb=${id}` },
+    { name: 'Embed.su', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://embed.su/embed/tv/${id}/${s||1}/${e||1}` : `https://embed.su/embed/movie/${id}` },
+    { name: 'VidSrc.cc', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.cc/v2/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.cc/v2/embed/movie/${id}` },
+    { name: 'Autoembed.cc', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.cc/tv/tmdb/${id}-${s||1}-${e||1}` : `https://autoembed.cc/movie/tmdb/${id}` }
   ];
 
   let prevPlaybackKey = "";
@@ -49,7 +62,9 @@
       // Reset state saat membuka film/episode baru
       prevPlaybackKey = currentKey;
       subtitlesList = [];
+      downloadsList = [];
       showSubtitleModal = false;
+      showDownloadModal = false;
       
       // Auto-rotate to landscape if on a mobile portrait screen
       if (typeof window !== 'undefined' && window.innerWidth < window.innerHeight && window.innerWidth < 768) {
@@ -63,8 +78,10 @@
     } else if (!show) {
       // Reset state when closed
       subtitlesList = [];
+      downloadsList = [];
       imdbId = null;
       showSubtitleModal = false;
+      showDownloadModal = false;
       isForceLandscape = false;
       prevPlaybackKey = "";
       clearTimeout(controlsTimeout);
@@ -135,8 +152,42 @@
     }
   }
 
+  async function fetchDownloads() {
+    showDownloadModal = true;
+    showSubtitleModal = false;
+    resetControlsTimeout();
+    
+    if (downloadsList.length > 0) return; // Already fetched
+
+    isFetchingDownloads = true;
+    try {
+      if (!imdbId) await fetchImdbId();
+      if (!imdbId) {
+        isFetchingDownloads = false;
+        return;
+      }
+      
+      let url = `https://torrentio.strem.fun/stream/movie/${imdbId}.json`;
+      if (mediaType === 'tv') {
+        url = `https://torrentio.strem.fun/stream/series/${imdbId}:${season||1}:${episode||1}.json`;
+      }
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if (data && data.streams) {
+        downloadsList = data.streams.filter((s: any) => s.infoHash); // only magnet links
+      }
+    } catch(e) {
+      console.error(e);
+    } finally {
+      isFetchingDownloads = false;
+    }
+  }
+
   function close() {
     showSubtitleModal = false;
+    showDownloadModal = false;
     clearTimeout(controlsTimeout);
     dispatch('close');
   }
@@ -299,6 +350,17 @@
 
           <div class="w-px h-5 bg-white/20 mx-0.5"></div>
 
+          <!-- Download Button -->
+          <button 
+            class="text-white/80 hover:text-brand-red hover:bg-white/10 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-1.5 {downloadsList.length > 0 ? 'text-brand-red' : ''}"
+            on:click|preventDefault|stopPropagation={() => fetchDownloads()}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span class="font-medium hidden sm:inline">Download</span>
+          </button>
+
+          <div class="w-px h-5 bg-white/20 mx-0.5"></div>
+
           <!-- Close Button -->
           <button 
             class="text-white/80 hover:text-brand-red hover:bg-brand-red/20 p-1.5 sm:p-2 rounded-xl transition-colors shrink-0" 
@@ -345,6 +407,72 @@
                       
                       <a href={sub.url} target="_blank" title="Download Subtitle" class="flex items-center justify-center shrink-0 bg-white/5 hover:bg-brand-red text-white/70 hover:text-white p-2.5 rounded-xl border border-white/10 hover:border-brand-red transition-all duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      </a>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Torrent Download Results Overlay -->
+      {#if showDownloadModal}
+        <div class="absolute inset-0 bg-black/40 pointer-events-none z-65"></div>
+        <div class="absolute inset-y-0 right-0 w-85 sm:w-96 bg-black/80 backdrop-blur-2xl border-l border-white/10 p-6 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-transform" style="z-index: 70;" transition:fade={{duration: 150}}>
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-red"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download via Torrent
+            </h3>
+            <button title="Tutup" on:click|stopPropagation={() => { showDownloadModal = false; resetControlsTimeout(); }} class="text-white/40 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <div class="bg-brand-red/10 border border-brand-red/20 rounded-xl p-3 mb-4">
+            <p class="text-xs text-white/80">
+              Pastikan Anda memiliki aplikasi torrent client seperti <strong class="text-white">qBittorrent</strong> atau <strong class="text-white">uTorrent</strong> untuk membuka tautan magnet ini.
+            </p>
+          </div>
+          
+          <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            {#if isFetchingDownloads}
+              <div class="flex flex-col items-center justify-center py-12 gap-3">
+                <svg class="animate-spin h-8 w-8 text-brand-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="text-white/50 text-sm">Mengambil data dari Torrentio...</p>
+              </div>
+            {:else if downloadsList.length === 0}
+              <div class="text-center py-10 bg-white/5 rounded-xl border border-white/10">
+                <p class="text-white/70 text-sm">Link download tidak ditemukan untuk film ini.</p>
+              </div>
+            {:else}
+              <div class="space-y-3">
+                {#each downloadsList as stream}
+                  <div class="flex flex-col p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300">
+                    <div class="flex flex-col gap-1 mb-2">
+                      <span class="text-white font-medium text-sm break-words leading-snug">{stream.title.split('\n')[0]}</span>
+                      <span class="text-brand-red text-xs font-bold">{stream.name}</span>
+                      <span class="text-white/60 text-xs">{stream.title.split('\n').slice(1).join(' | ')}</span>
+                    </div>
+                    <div class="flex justify-end mt-2 gap-2 flex-wrap">
+                      <a 
+                        href={`https://webtor.io/show?magnet=${encodeURIComponent(`magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title.split('\n')[0])}`)}`}
+                        target="_blank"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                        on:click|stopPropagation
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Web Download
+                      </a>
+                      <a 
+                        href={`magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title.split('\n')[0])}`}
+                        class="px-4 py-2 bg-brand-red hover:bg-brand-red/80 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                        on:click|stopPropagation
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Buka App
                       </a>
                     </div>
                   </div>
