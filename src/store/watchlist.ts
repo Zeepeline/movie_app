@@ -29,7 +29,10 @@ if (typeof window !== 'undefined') {
         } else {
           // If no cloud data exists yet, sync the current local data to cloud
           const currentItems = get(watchlistStore);
-          await setDoc(docRef, { watchlist: currentItems }, { merge: true });
+          if (currentItems.length > 0) {
+            const cleanValue = JSON.parse(JSON.stringify(currentItems));
+            await setDoc(docRef, { watchlist: cleanValue }, { merge: true });
+          }
         }
       } catch (e) {
         console.error("Error fetching watchlist from cloud:", e);
@@ -48,7 +51,8 @@ watchlistStore.subscribe(async (value) => {
     if (currentUser && db) {
       try {
         const docRef = doc(db, 'users', currentUser.uid);
-        await setDoc(docRef, { watchlist: value }, { merge: true });
+        const cleanValue = JSON.parse(JSON.stringify(value));
+        await setDoc(docRef, { watchlist: cleanValue }, { merge: true });
       } catch (e) {
         console.error("Error saving watchlist to cloud:", e);
       }

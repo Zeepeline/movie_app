@@ -24,7 +24,8 @@ if (typeof window !== 'undefined') {
         } else {
           const currentItems = get(historyStore);
           if (currentItems.length > 0) {
-            await setDoc(docRef, { history: currentItems }, { merge: true });
+            const cleanValue = JSON.parse(JSON.stringify(currentItems));
+            await setDoc(docRef, { history: cleanValue }, { merge: true });
           }
         }
       } catch (e) {
@@ -41,7 +42,8 @@ historyStore.subscribe(async (value) => {
     if (currentUser && db) {
       try {
         const docRef = doc(db, 'users', currentUser.uid);
-        await setDoc(docRef, { history: value }, { merge: true });
+        const cleanValue = JSON.parse(JSON.stringify(value));
+        await setDoc(docRef, { history: cleanValue }, { merge: true });
       } catch (e) {
         console.error("Error saving history to cloud:", e);
       }

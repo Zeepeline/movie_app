@@ -14,10 +14,10 @@ export async function onRequest(context) {
   const request = context.request;
   const url = new URL(request.url);
   
-  // 1. Keamanan Lapis 1: Cek Referer/Origin
+  // 1. Keamanan Lapis 1: Cek Referer/Origin (Longgarkan untuk same-origin fetch yang kadang tidak mengirim header ini)
   const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
   const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
-  const isAllowedDomain = origin.includes('imintul.online') || origin.includes('.pages.dev');
+  const isAllowedDomain = origin === '' || origin.includes('imintul.online') || origin.includes('.pages.dev');
   
   if (!isLocal && !isAllowedDomain) {
     return new Response(JSON.stringify({ success: false, error: 'Access Denied: Invalid Origin' }), {
@@ -41,11 +41,10 @@ export async function onRequest(context) {
     const ts = parseInt(tsStr, 10);
     const expectedHashStr = hashStr;
 
-    // Cek apakah timestamp valid (tidak lebih tua dari 2 menit / 120000ms)
-    // dan tidak lebih dari masa depan
+    // Cek apakah timestamp valid (toleransi 10 menit / 600000ms untuk clock skew perangkat user)
     const now = Date.now();
-    if (Math.abs(now - ts) > 120000) {
-      return new Response(JSON.stringify({ success: false, error: 'Access Denied: Token Expired' }), { status: 403 });
+    if (Math.abs(now - ts) > 600000) {
+      return new Response(JSON.stringify({ success: false, error: 'Access Denied: Token Expired or Clock Skew' }), { status: 403 });
     }
 
     // Hitung ulang hash

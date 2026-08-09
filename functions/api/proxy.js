@@ -14,18 +14,16 @@ export async function onRequest(context) {
   const request = context.request;
   const url = new URL(request.url);
   
-  // 1. Keamanan Lapis 1: Cek Referer/Origin
-  // Beberapa player (seperti HLS.js atau Native Safari) tidak selalu mengirim Origin, jadi kita cek keduanya
+  // 1. Keamanan Lapis 1: Cek Referer/Origin (Longgarkan untuk same-origin fetch yang kadang tidak mengirim header ini)
   const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  // Jika origin kosong, kita biarkan lolos HANYA JIKA signature valid (di bawah)
-  // Ini karena Native Safari di iOS kadang tidak mengirim Origin saat fetch segmen .ts
-  if (origin) {
-    const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
-    const isAllowedDomain = origin.includes('imintul.online') || origin.includes('.pages.dev');
-    
-    if (!isLocal && !isAllowedDomain) {
-      return new Response('Access Denied: Invalid Origin/Referer', { status: 403 });
-    }
+  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+  const isAllowedDomain = origin === '' || origin.includes('imintul.online') || origin.includes('.pages.dev');
+  
+  if (!isLocal && !isAllowedDomain) {
+    return new Response(JSON.stringify({ success: false, error: 'Access Denied: Invalid Origin' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const targetUrl = url.searchParams.get('url');
@@ -40,7 +38,7 @@ export async function onRequest(context) {
   // 2. Keamanan Lapis 2: Verifikasi Signature HMAC
   const exp = parseInt(expStr, 10);
   if (Date.now() / 1000 > exp) {
-    return new Response('Link expired', { status: 403 });
+    return new Response(JSON.stringify({ success: false, error: 'Link expired' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   }
   
   const secretKey = context.env.PROXY_SECRET_KEY || 'imintul-super-secret-key-123!';
