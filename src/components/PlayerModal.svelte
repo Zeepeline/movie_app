@@ -5,7 +5,6 @@
   import type { StreamData } from '../types/stream';
   import CustomPlayer from './CustomPlayer.svelte';
 
-
   export let show: boolean = false;
   export let tmdbId: string | number = "";
   export let mediaType: string = "movie";
@@ -29,9 +28,18 @@
   let streamData: StreamData | null = null;
   let isFetchingStream = false;
 
-  // Auto-hide controls
+  let iframeElement: HTMLIFrameElement;
   let isControlsVisible = true;
   let controlsTimeout: ReturnType<typeof setTimeout>;
+
+  // Jebakan Anti-Redirect: Mencegah Iframe membajak dan mengalihkan halaman utama
+  function handleBeforeUnload(e: BeforeUnloadEvent) {
+    if (show && selectedServer > 0) {
+      e.preventDefault();
+      e.returnValue = ''; // Wajib untuk Chrome lama
+      return '';
+    }
+  }
 
   function resetControlsTimeout() {
     isControlsVisible = true;
@@ -344,6 +352,8 @@
   }
 </script>
 
+<svelte:window on:beforeunload={handleBeforeUnload} />
+
 {#if show}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -378,10 +388,9 @@
       {:else if tmdbId}
         <iframe 
           id="movie-iframe"
-          src={selectedServer > 0 ? `/adblock-proxy?url=${encodeURIComponent(servers[selectedServer].getUrl(tmdbId, mediaType, season, episode))}` : servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
+          src={servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
           title="Movie Player"
           class="w-full h-full border-0 pointer-events-auto bg-black"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
           allow="autoplay; picture-in-picture; fullscreen"
           allowfullscreen>
         </iframe>
