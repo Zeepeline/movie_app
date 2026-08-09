@@ -22,9 +22,8 @@ export async function getStreamLinks(
       "2024"
     ).substring(0, 4);
 
-    // 2. Tembak ke Backend Scraper (movie-web) lokal kita
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    let scrapeUrl = `http://${hostname}:3000/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
+    // 2. Tembak ke Backend (Cloudflare Worker lokal/prod)
+    let scrapeUrl = `/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
     if (type === "tv" && season && episode) {
       scrapeUrl += `&season=${season}&episode=${episode}`;
     }

@@ -22,7 +22,8 @@ export async function onRequest(context) {
     const response = await fetch(targetUrl, { headers: aetherHeaders });
 
     if (!response.ok) {
-      throw new Error(`Aether Ghost API Error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Aether Ghost API Error: ${response.status}. Body: ${errorText.substring(0, 500)}`);
     }
 
     const data = await response.json();

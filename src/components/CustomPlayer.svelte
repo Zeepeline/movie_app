@@ -121,9 +121,9 @@
 </script>
 
 <!-- Mengatur tema Plyr menggunakan variabel CSS Plyr -->
-<div class="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl relative player-wrapper">
+<div class="w-full h-full flex items-center justify-center overflow-hidden bg-black shadow-2xl relative player-wrapper">
   <!-- Atribut crossorigin WAJIB agar subtitle bisa dimuat dari beda server -->
-  <video bind:this={videoElement} playsinline crossorigin="anonymous" class="w-full h-full">
+  <video bind:this={videoElement} playsinline crossorigin="anonymous" class="w-full h-full max-h-full">
     {#each subtitles as sub}
       <!-- Menyuntikkan track subtitle ke dalam video -->
       <!-- Jika labelnya 'Indonesian', kita set default -->
@@ -144,5 +144,22 @@
     --plyr-color-main: #e50914;
     --plyr-video-background: #000000;
     --plyr-font-family: 'Inter', sans-serif;
+  }
+  
+  /* Pastikan Plyr benar-benar mengisi wrapper dan memposisikan video di tengah */
+  :global(.plyr) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  :global(.plyr__video-wrapper) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </style>

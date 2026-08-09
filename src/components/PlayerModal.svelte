@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
   import { getStreamLinks } from '../lib/streamApi';
-  import CustomPlayer from './CustomPlayer.svelte';
   import type { StreamData } from '../types/stream';
+  import CustomPlayer from './CustomPlayer.svelte';
 
 
   export let show: boolean = false;
@@ -46,7 +46,6 @@
   let isForceLandscape = false;
   const servers = [
     { name: 'IrmintulStream (Aether Proxy)', getUrl: () => '' },
-    { name: 'Cineby', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.cineby.at/tv/${id}/${s||1}/${e||1}?play=true` : `https://www.cineby.at/movie/${id}?play=true` },
     { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}?autoplay=1` : `https://autoembed.co/movie/tmdb/${id}?autoplay=1` },
     { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
     { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.me/embed/movie/${id}` },
@@ -54,14 +53,6 @@
     { name: 'SuperEmbed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s||1}&e=${e||1}&autoplay=1` : `https://multiembed.mov/?video_id=${id}&tmdb=1&autoplay=1` },
     { name: 'SmashyStream', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://player.smashy.stream/tv/?tmdb=${id}&season=${s||1}&episode=${e||1}&autoplay=1` : `https://player.smashy.stream/movie/?tmdb=${id}&autoplay=1` },
     { name: '2Embed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.2embed.cc/embedtv/${id}&s=${s||1}&e=${e||1}&autoplay=1` : `https://www.2embed.cc/embed/${id}?autoplay=1` },
-    { name: 'VidBinge', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidbinge.dev/embed/tv/${id}/${s||1}/${e||1}` : `https://vidbinge.dev/embed/movie/${id}` },
-    { name: 'Vidsrc.net', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.net/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.net/embed/movie/${id}` },
-    { name: 'Vidsrc.in', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.in/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.in/embed/movie/${id}` },
-    { name: 'MoviesAPI', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://moviesapi.club/tv/${id}-${s||1}-${e||1}` : `https://moviesapi.club/movie/${id}` },
-    { name: 'GDrivePlayer', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://databasegdriveplayer.co/player.php?type=series&tmdb=${id}&season=${s||1}&episode=${e||1}` : `https://databasegdriveplayer.co/player.php?tmdb=${id}` },
-    { name: 'Embed.su', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://embed.su/embed/tv/${id}/${s||1}/${e||1}` : `https://embed.su/embed/movie/${id}` },
-    { name: 'VidSrc.cc', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.cc/v2/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.cc/v2/embed/movie/${id}` },
-    { name: 'Autoembed.cc', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.cc/tv/tmdb/${id}-${s||1}-${e||1}` : `https://autoembed.cc/movie/tmdb/${id}` }
   ];
 
   let prevPlaybackKey = "";
@@ -186,11 +177,11 @@
       if (result && result.sources && result.sources.length > 0) {
         streamData = result;
       } else {
-        selectedServer = 1; // Fallback ke Cineby
+        // Gagal mengambil stream
+        console.error("Stream tidak ditemukan dari Aether/Stremio");
       }
     } catch(e) {
-      console.error(e);
-      selectedServer = 1; // Fallback ke Cineby
+      console.error("Error fetching stream:", e);
     } finally {
       isFetchingStream = false;
     }
