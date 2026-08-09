@@ -37,6 +37,14 @@ export async function getStreamLinks(
     clearTimeout(timeoutId);
 
     if (!scrapeRes.ok) return null;
+    
+    // Pastikan response adalah JSON (mencegah error parsing jika CF Pages mengembalikan index.html)
+    const contentType = scrapeRes.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("Backend mengembalikan format non-JSON (Mungkin Functions belum ter-deploy dengan benar di Cloudflare).", await scrapeRes.text());
+      return null;
+    }
+
     const scrapeData = await scrapeRes.json();
     
     if (scrapeData && scrapeData.success && scrapeData.sources) {
