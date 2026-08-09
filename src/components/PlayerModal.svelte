@@ -378,9 +378,10 @@
       {:else if tmdbId}
         <iframe 
           id="movie-iframe"
-          src={servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
+          src={selectedServer > 0 ? `/adblock-proxy?url=${encodeURIComponent(servers[selectedServer].getUrl(tmdbId, mediaType, season, episode))}` : servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
           title="Movie Player"
           class="w-full h-full border-0 pointer-events-auto bg-black"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
           allow="autoplay; picture-in-picture; fullscreen"
           allowfullscreen>
         </iframe>

@@ -86,25 +86,26 @@
 
   function getUrlForState(page: string, movieId: string | number | null, mediaType: string, personId: string | number | null = null) {
     const url = new URL(window.location.href);
+    
+    // Selalu set parameter page jika bukan home, hapus jika home
+    if (page && page !== 'home') {
+      url.searchParams.set('page', page);
+    } else {
+      url.searchParams.delete('page');
+    }
+
     if (movieId) {
       url.searchParams.set('movie', movieId.toString());
       url.searchParams.set('type', mediaType);
-      url.searchParams.delete('page');
       url.searchParams.delete('person');
     } else if (personId) {
       url.searchParams.set('person', personId.toString());
       url.searchParams.delete('movie');
       url.searchParams.delete('type');
-      url.searchParams.delete('page');
     } else {
       url.searchParams.delete('movie');
       url.searchParams.delete('type');
       url.searchParams.delete('person');
-      if (page !== 'home') {
-        url.searchParams.set('page', page);
-      } else {
-        url.searchParams.delete('page');
-      }
     }
     return url.pathname + url.search;
   }

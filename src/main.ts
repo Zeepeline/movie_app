@@ -3,10 +3,14 @@ import { mount } from "svelte";
 import "./app.css";
 import App from "./App.svelte";
 import { registerSW } from 'virtual:pwa-register';
+import './lib/firebase';
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
   registerSW({ immediate: true });
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('Adblock Proxy SW registered', reg.scope))
+    .catch(err => console.error('SW Error:', err));
 }
 
 console.log("Executing main.ts - if you see this, JS is running!");

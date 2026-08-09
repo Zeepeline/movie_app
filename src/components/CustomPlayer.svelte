@@ -109,6 +109,55 @@
       player = new Plyr(videoElement, defaultOptions);
     }
   }
+  let showContextMenu = false;
+  let contextMenuPos = { x: 0, y: 0 };
+  let lastRightClick = 0;
+  let wrapperElement: HTMLDivElement;
+
+  function handleContextMenu(e: MouseEvent) {
+    const now = Date.now();
+    // Jika klik kanan kedua dalam waktu kurang dari 800ms, biarkan browser menampilkan menu bawaan (native PiP dll)
+    if (now - lastRightClick < 800) {
+      showContextMenu = false;
+    } else {
+      // Klik kanan pertama: cegah menu bawaan dan tampilkan menu kustom
+      e.preventDefault();
+      if (wrapperElement) {
+        const rect = wrapperElement.getBoundingClientRect();
+        contextMenuPos = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+      showContextMenu = true;
+      lastRightClick = now;
+    }
+  }
+
+  function hideContextMenu() {
+    showContextMenu = false;
+  }
+
+  function toggleLoop() {
+    if (player) {
+      player.loop = !player.loop;
+    }
+    hideContextMenu();
+  }
+
+  function copyVideoUrl() {
+    navigator.clipboard.writeText(window.location.href);
+    hideContextMenu();
+  }
+
+  async function togglePiP() {
+    hideContextMenu();
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+    } else if (document.pictureInPictureEnabled && videoElement) {
+      await videoElement.requestPictureInPicture();
+    }
+  }
 
   onMount(() => {
     initPlayer();
@@ -120,8 +169,36 @@
   });
 </script>
 
+<svelte:window on:click={hideContextMenu} />
+
 <!-- Mengatur tema Plyr menggunakan variabel CSS Plyr -->
-<div class="w-full h-full flex items-center justify-center overflow-hidden bg-black shadow-2xl relative player-wrapper">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div 
+  bind:this={wrapperElement}
+  class="w-full h-full flex items-center justify-center overflow-hidden bg-black shadow-2xl relative player-wrapper"
+  on:contextmenu={handleContextMenu}
+>
+  
+  {#if showContextMenu}
+    <div 
+      class="absolute bg-bg-elevated/95 border border-white/10 rounded-xl py-2 min-w-48 z-[100] text-sm shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+      style="top: {contextMenuPos.y}px; left: {contextMenuPos.x}px;"
+    >
+      <button class="w-full text-left px-4 py-2 hover:bg-white/10 text-white transition-colors flex items-center gap-3" on:click={toggleLoop}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        {player?.loop ? 'Matikan Pengulangan' : 'Ulangi Video'}
+      </button>
+      <button class="w-full text-left px-4 py-2 hover:bg-white/10 text-white transition-colors flex items-center gap-3" on:click={copyVideoUrl}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        Salin URL Video
+      </button>
+      <button class="w-full text-left px-4 py-2 hover:bg-white/10 text-white transition-colors flex items-center gap-3" on:click={togglePiP}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><rect x="12" y="11" width="8" height="5" rx="1" ry="1"></rect><polyline points="16 16 12 16 12 12"></polyline></svg>
+        Picture-in-Picture
+      </button>
+    </div>
+  {/if}
+
   <!-- Atribut crossorigin WAJIB agar subtitle bisa dimuat dari beda server -->
   <video bind:this={videoElement} playsinline crossorigin="anonymous" class="w-full h-full max-h-full">
     {#each subtitles as sub}
