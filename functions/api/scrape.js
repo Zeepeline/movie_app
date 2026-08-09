@@ -14,53 +14,52 @@ export async function onRequest(context) {
   const request = context.request;
   const url = new URL(request.url);
   
-  // 1. Keamanan Lapis 1: Cek Referer/Origin (Longgarkan untuk same-origin fetch yang kadang tidak mengirim header ini)
+  // TEMPORARY BYPASS: Log errors but don't block, to debug production issue
+  let debugError = "";
+
+  // 1. Keamanan Lapis 1: Cek Referer/Origin
   const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
   const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
   const isAllowedDomain = origin === '' || origin.includes('imintul.online') || origin.includes('.pages.dev');
   
   if (!isLocal && !isAllowedDomain) {
-    return new Response(JSON.stringify({ success: false, error: 'Access Denied: Invalid Origin' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    debugError += "Invalid Origin: " + origin + ". ";
   }
 
   // 1.5. Keamanan Lapis 1.5: Verifikasi Dynamic JS Challenge
   const token = request.headers.get('X-Imintul-Token');
   if (!token) {
-    return new Response(JSON.stringify({ success: false, error: 'Access Denied: Missing Challenge Token' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    debugError += "Missing Token. ";
+  } else {
+    try {
+      const decoded = atob(token);
+      const [tsStr, hashStr] = decoded.split('|');
+      const ts = parseInt(tsStr, 10);
+      const expectedHashStr = hashStr;
+
+      const now = Date.now();
+      if (Math.abs(now - ts) > 600000) {
+        debugError += "Token Expired. ";
+      } else {
+        const salt = "imintul-magic-salt";
+        const str = tsStr + salt;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash |= 0;
+        }
+
+        if (hash.toString() !== expectedHashStr) {
+          debugError += "Invalid Token Signature. ";
+        }
+      }
+    } catch (e) {
+      debugError += "Token Decode Error. ";
+    }
   }
 
-  try {
-    const decoded = atob(token);
-    const [tsStr, hashStr] = decoded.split('|');
-    const ts = parseInt(tsStr, 10);
-    const expectedHashStr = hashStr;
-
-    // Cek apakah timestamp valid (toleransi 10 menit / 600000ms untuk clock skew perangkat user)
-    const now = Date.now();
-    if (Math.abs(now - ts) > 600000) {
-      return new Response(JSON.stringify({ success: false, error: 'Access Denied: Token Expired or Clock Skew' }), { status: 403 });
-    }
-
-    // Hitung ulang hash
-    const salt = "imintul-magic-salt";
-    const str = tsStr + salt;
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
-    }
-
-    if (hash.toString() !== expectedHashStr) {
-      return new Response(JSON.stringify({ success: false, error: 'Access Denied: Invalid Challenge Signature' }), { status: 403 });
-    }
-  } catch (err) {
-    return new Response(JSON.stringify({ success: false, error: 'Access Denied: Malformed Token' }), { status: 403 });
+  if (debugError !== "") {
+    console.log("Scrape Security Warning:", debugError);
   }
 
   const tmdbId = url.searchParams.get('tmdbId');

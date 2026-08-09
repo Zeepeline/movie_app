@@ -55,7 +55,10 @@ export async function getStreamLinks(
     });
     clearTimeout(timeoutId);
 
-    if (!scrapeRes.ok) return null;
+    if (!scrapeRes.ok) {
+      console.error(`Scrape API Failed (${scrapeRes.status}):`, await scrapeRes.text());
+      return null;
+    }
     
     // Pastikan response adalah JSON (mencegah error parsing jika CF Pages mengembalikan index.html)
     const contentType = scrapeRes.headers.get("content-type");
