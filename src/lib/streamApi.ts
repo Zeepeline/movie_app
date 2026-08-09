@@ -6,9 +6,11 @@ export async function getStreamLinks(
   season?: number,
   episode?: number,
 ): Promise<StreamData | null> {
+  console.log("getStreamLinks called with:", tmdbId, type, season, episode);
   try {
     // 1. Ambil informasi film/series dasar dari TMDB untuk mendapatkan title & releaseYear
-    const tmdbApiUrl = `https://api.themoviedb.org/3/${type === "tv" ? "tv" : "movie"}/${tmdbId}?api_key=4b8c9c4021ba0928e3fa0ebbf7cd9107`;
+    const apiKey = import.meta.env.VITE_TMDB_API_KEY || '4b8c9c4021ba0928e3fa0ebbf7cd9107';
+    const tmdbApiUrl = `https://api.themoviedb.org/3/${type === "tv" ? "tv" : "movie"}/${tmdbId}?api_key=${apiKey}`;
     const tmdbRes = await fetch(tmdbApiUrl);
     if (!tmdbRes.ok) throw new Error("TMDB fetch failed");
     const tmdbData = await tmdbRes.json();
@@ -21,36 +23,33 @@ export async function getStreamLinks(
     ).substring(0, 4);
 
     // 2. Tembak ke Backend Scraper (movie-web) lokal kita
-    let scrapeUrl = `http://localhost:3000/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    let scrapeUrl = `http://${hostname}:3000/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
     if (type === "tv" && season && episode) {
       scrapeUrl += `&season=${season}&episode=${episode}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     const scrapeRes = await fetch(scrapeUrl, {
-      signal: AbortSignal.timeout(10000), // tunggu max 10 detik
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (!scrapeRes.ok) return null;
     const scrapeData = await scrapeRes.json();
-
-    if (scrapeData.success && scrapeData.streamUrl) {
+    
+    if (scrapeData && scrapeData.success && scrapeData.sources) {
       return {
-        sources: [
-          {
-            url: scrapeData.streamUrl,
-            quality: "auto",
-            isM3U8: scrapeData.streamUrl.includes(".m3u8"),
-          },
-        ],
-        subtitles: scrapeData.captions || [],
+        sources: scrapeData.sources,
+        subtitles: scrapeData.captions || []
       };
     }
 
     return null;
   } catch (error) {
-    console.warn(
-      "Backend Scraper lokal gagal atau tidak ditemukan stream. Menggunakan mode Fallback (Iframe).",
-    );
+    console.warn("Backend Scraper Error:", error);
     return null;
   }
 }

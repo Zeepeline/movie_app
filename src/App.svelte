@@ -13,6 +13,7 @@
   import SeriesPage from "./pages/SeriesPage.svelte";
   import KidsPage from "./pages/KidsPage.svelte";
   import WatchlistPage from "./pages/WatchlistPage.svelte";
+  import TestPlayerPage from "./pages/TestPlayerPage.svelte";
   import { historyStore, addToHistory } from './store/history';
 
   let trendingMovies: any[] = [];
@@ -198,6 +199,8 @@
     <SeriesPage on:detail={openDetail} />
   {:else if currentPage === 'kids'}
     <KidsPage on:detail={openDetail} />
+  {:else if currentPage === 'test'}
+    <TestPlayerPage />
   {:else if currentPage === 'login'}
     <LoginPage 
       on:loginSuccess={() => { currentPage = 'home'; }}
@@ -240,8 +243,8 @@
 
     {#if nowPlayingMovies.length > 0}
       <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
-          <h2 class="text-xl font-bold text-white mb-4">Now Playing</h2>
-          <div class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory pb-4">
+          <h2 class="text-xl font-bold text-white mb-4">Continue Watching</h2>
+          <div class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory pb-4 px-[4%] -mx-[4%]">
             {#each nowPlayingMovies.slice(0, 6) as movie}
               <div class="snap-start shrink-0 w-65 sm:w-[320px] lg:w-100">
                 <ContinueWatchingCard 

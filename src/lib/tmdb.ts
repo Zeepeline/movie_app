@@ -133,7 +133,7 @@ export async function getMovieDetailsFull(
   mediaType: string = "movie",
 ): Promise<MovieDetails> {
   return await fetchTMDB<MovieDetails>(
-    `/${mediaType}/${id}?append_to_response=credits,similar,reviews,videos`,
+    `/${mediaType}/${id}?append_to_response=credits,similar,reviews,videos,external_ids`,
   );
 }
 

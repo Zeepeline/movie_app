@@ -1,6 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
+  import { getStreamLinks } from '../lib/streamApi';
+  import CustomPlayer from './CustomPlayer.svelte';
+  import type { StreamData } from '../types/stream';
 
 
   export let show: boolean = false;
@@ -22,6 +25,10 @@
   let isFetchingDownloads = false;
   let downloadsList: any[] = [];
 
+  // Stream State
+  let streamData: StreamData | null = null;
+  let isFetchingStream = false;
+
   // Auto-hide controls
   let isControlsVisible = true;
   let controlsTimeout: ReturnType<typeof setTimeout>;
@@ -38,6 +45,8 @@
   let selectedServer = 0;
   let isForceLandscape = false;
   const servers = [
+    { name: 'IrmintulStream (Aether Proxy)', getUrl: () => '' },
+    { name: 'Cineby', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://www.cineby.at/tv/${id}/${s||1}/${e||1}?play=true` : `https://www.cineby.at/movie/${id}?play=true` },
     { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}?autoplay=1` : `https://autoembed.co/movie/tmdb/${id}?autoplay=1` },
     { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
     { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.me/embed/movie/${id}` },
@@ -74,11 +83,17 @@
       }
       
       resetControlsTimeout();
+      
+      // Kembalikan ke server default (IrmintulStream) saat membuka film baru
+      selectedServer = 0; 
+      
       fetchSubtitles(true); // Auto-fetch silent
+      fetchStreamData();
     } else if (!show) {
       // Reset state when closed
       subtitlesList = [];
       downloadsList = [];
+      streamData = null;
       imdbId = null;
       showSubtitleModal = false;
       showDownloadModal = false;
@@ -99,6 +114,92 @@
     if ((episode || 1) > 1) {
       episode = (episode || 1) - 1;
       resetControlsTimeout();
+    }
+  }
+
+  async function fetchStreamData() {
+    if (selectedServer !== 0) return; // Hanya fetch jika servernya IrmintulStream
+
+    isFetchingStream = true;
+    streamData = null;
+    
+    try {
+      // 1. Dapatkan IMDb ID terlebih dahulu
+      if (!imdbId) await fetchImdbId();
+      
+      // 2. Coba ambil stream dari ekosistem Addon Stremio (Cara 4)
+      if (imdbId) {
+        try {
+          const addons = [
+            "https://mediafusion.elfhosted.com",
+            "https://shluflix.elfhosted.com"
+          ];
+          
+          const stremioPromises = addons.map(async (baseUrl) => {
+            const url = mediaType === 'tv' 
+              ? `${baseUrl}/stream/series/${imdbId}:${season||1}:${episode||1}.json`
+              : `${baseUrl}/stream/movie/${imdbId}.json`;
+              
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 detik batas waktu
+            
+            try {
+              const res = await fetch(url, { signal: controller.signal });
+              clearTimeout(timeoutId);
+              
+              if (!res.ok) throw new Error("Addon failed");
+              const data = await res.json();
+              
+              if (data && data.streams && data.streams.length > 0) {
+                // Cari stream yang berupa URL HTTP langsung (bukan Torrent/infoHash)
+                const httpStream = data.streams.find((s: any) => s.url && s.url.startsWith('http'));
+                if (httpStream) {
+                  return {
+                    success: true,
+                    sources: [{
+                      url: httpStream.url,
+                      isM3U8: httpStream.url.includes('.m3u8'),
+                      quality: httpStream.name || 'auto'
+                    }],
+                    subtitles: []
+                  };
+                }
+              }
+              throw new Error("No HTTP streams found");
+            } catch (err) {
+              clearTimeout(timeoutId);
+              throw err;
+            }
+          });
+
+          // Ambil hasil tercepat dari Addon Stremio mana saja yang merespons
+          streamData = await Promise.any(stremioPromises);
+          isFetchingStream = false;
+          return; // Sukses menggunakan Stremio!
+        } catch (stremioError) {
+          console.warn("Semua Stremio Addons gagal atau timeout, beralih ke server.js...");
+        }
+      }
+
+      // 3. Fallback: Gunakan server.js (Puppeteer) jika Stremio gagal
+      const result = await getStreamLinks(tmdbId, mediaType, season, episode);
+      if (result && result.sources && result.sources.length > 0) {
+        streamData = result;
+      } else {
+        selectedServer = 1; // Fallback ke Cineby
+      }
+    } catch(e) {
+      console.error(e);
+      selectedServer = 1; // Fallback ke Cineby
+    } finally {
+      isFetchingStream = false;
+    }
+  }
+
+  // Reactive listener untuk memicu fetchStreamData jika user memilih IrmintulStream secara manual
+  function handleServerChange(event: Event) {
+    if (selectedServer === 0 && !streamData && !isFetchingStream) {
+      fetchStreamData();
     }
   }
 
@@ -143,7 +244,31 @@
       const data = await res.json();
       
       if (data && data.subtitles) {
-        subtitlesList = data.subtitles;
+        // Filter only Indonesian and English, and take top 5 to avoid slow loading
+        const filteredSubs = data.subtitles.filter((s: any) => s.lang === 'ind' || s.lang === 'eng').slice(0, 5);
+        
+        const processedSubs = [];
+        for (const sub of filteredSubs) {
+          try {
+            const subRes = await fetch(sub.url);
+            const text = await subRes.text();
+            
+            let vttText = text;
+            if (!text.startsWith('WEBVTT')) {
+              vttText = 'WEBVTT\n\n' + text.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+            }
+            
+            const blob = new Blob([vttText], { type: 'text/vtt' });
+            processedSubs.push({
+              lang: sub.lang === 'ind' ? 'Indonesian' : 'English',
+              url: URL.createObjectURL(blob)
+            });
+          } catch(e) {
+            console.error("Gagal mengonversi subtitle:", e);
+          }
+        }
+        
+        subtitlesList = processedSubs;
       }
     } catch(e) {
       console.error(e);
@@ -246,8 +371,24 @@
       on:click|stopPropagation role="presentation"
     >
       
-      <!-- VIDEO PLAYER (IFRAME ONLY) -->
-      {#if tmdbId}
+      <!-- VIDEO PLAYER ATAU IFRAME -->
+      {#if selectedServer === 0}
+        {#if isFetchingStream || isFetchingSubtitles}
+          <div class="flex flex-col items-center justify-center w-full h-full text-white bg-black">
+            <svg class="animate-spin h-10 w-10 text-brand-red mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p class="text-white/80 font-medium">Mengekstrak M3U8 & Subtitle...</p>
+            <p class="text-white/40 text-xs mt-2 text-center max-w-xs">Menggunakan IrmintulStream (Proxy)...<br>Bisa butuh 5-15 detik.</p>
+          </div>
+        {:else if streamData}
+          <div class="w-full h-full bg-black flex flex-col justify-center">
+             <CustomPlayer sources={streamData.sources} subtitles={subtitlesList} />
+          </div>
+        {:else}
+          <div class="flex items-center justify-center w-full h-full text-white bg-black">
+            <p>IrmintulStream gagal memuat.</p>
+          </div>
+        {/if}
+      {:else if tmdbId}
         <iframe 
           id="movie-iframe"
           src={servers[selectedServer].getUrl(tmdbId, mediaType, season, episode)} 
@@ -289,7 +430,7 @@
               <select 
                 class="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs sm:text-sm font-medium py-2 pl-8 pr-7 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red cursor-pointer transition-colors max-w-30 sm:max-w-none text-ellipsis"
                 bind:value={selectedServer}
-                on:change={() => resetControlsTimeout()}
+                on:change={handleServerChange}
               >
                 {#each servers as server, i}
                   <option value={i} class="bg-bg-elevated text-white">{server.name}</option>
