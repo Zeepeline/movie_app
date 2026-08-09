@@ -1,10 +1,53 @@
+async function generateHmac(message, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 export async function onRequest(context) {
-  const url = new URL(context.request.url);
+  const request = context.request;
+  const url = new URL(request.url);
+  
+  // 1. Keamanan Lapis 1: Cek Referer/Origin
+  // Beberapa player (seperti HLS.js atau Native Safari) tidak selalu mengirim Origin, jadi kita cek keduanya
+  const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
+  // Jika origin kosong, kita biarkan lolos HANYA JIKA signature valid (di bawah)
+  // Ini karena Native Safari di iOS kadang tidak mengirim Origin saat fetch segmen .ts
+  if (origin) {
+    const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+    const isAllowedDomain = origin.includes('imintul.online') || origin.includes('.pages.dev');
+    
+    if (!isLocal && !isAllowedDomain) {
+      return new Response('Access Denied: Invalid Origin/Referer', { status: 403 });
+    }
+  }
+
   const targetUrl = url.searchParams.get('url');
   const targetHeadersStr = url.searchParams.get('headers') || '{}';
+  const expStr = url.searchParams.get('exp');
+  const sig = url.searchParams.get('sig');
   
-  if (!targetUrl) {
-    return new Response('No URL provided', { status: 400 });
+  if (!targetUrl || !expStr || !sig) {
+    return new Response('Missing parameters or signature', { status: 400 });
+  }
+  
+  // 2. Keamanan Lapis 2: Verifikasi Signature HMAC
+  const exp = parseInt(expStr, 10);
+  if (Date.now() / 1000 > exp) {
+    return new Response('Link expired', { status: 403 });
+  }
+  
+  const secretKey = context.env.PROXY_SECRET_KEY || 'imintul-super-secret-key-123!';
+  const expectedSig = await generateHmac(`session:${exp}`, secretKey);
+  
+  if (sig !== expectedSig) {
+    return new Response('Invalid signature', { status: 403 });
   }
   
   try {
@@ -31,7 +74,7 @@ export async function onRequest(context) {
     
     // Membangun Response Headers
     const responseHeaders = new Headers({
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*' // Aman, karena Origin dan Signature sudah divalidasi
     });
     if (contentType) responseHeaders.set('Content-Type', contentType);
     
@@ -40,14 +83,14 @@ export async function onRequest(context) {
       const body = await response.text();
       const lines = body.split('\n');
       
-      const origin = url.origin;
+      const originHost = url.origin;
       const rewrittenLines = lines.map(line => {
         const t = line.trim();
         // Jika baris bukan komentar dan bukan kosong, itu adalah URL (Playlist lain atau file TS)
         if (t && !t.startsWith('#')) {
           const absoluteUrl = new URL(t, targetUrl).toString();
-          // Arahkan kembali ke proxy ini
-          return `${origin}/api/proxy?url=${encodeURIComponent(absoluteUrl)}&headers=${encodeURIComponent(targetHeadersStr)}`;
+          // Arahkan kembali ke proxy ini DENGAN MENERUSKAN exp dan sig
+          return `${originHost}/api/proxy?url=${encodeURIComponent(absoluteUrl)}&headers=${encodeURIComponent(targetHeadersStr)}&exp=${exp}&sig=${sig}`;
         }
         return line;
       });

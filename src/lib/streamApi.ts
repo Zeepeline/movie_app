@@ -1,5 +1,20 @@
 import type { StreamSource, Subtitle, StreamData } from '../types/stream';
 
+// Fungsi untuk menghasilkan token tantangan anti-scraping
+function generateChallengeToken(): string {
+  const ts = Date.now().toString();
+  const salt = "imintul-magic-salt";
+  const str = ts + salt;
+  
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  
+  return btoa(ts + "|" + hash.toString());
+}
+
 export async function getStreamLinks(
   tmdbId: string | number,
   type: string = "movie",
@@ -31,8 +46,12 @@ export async function getStreamLinks(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
+    const token = generateChallengeToken();
     const scrapeRes = await fetch(scrapeUrl, {
-      signal: controller.signal
+      signal: controller.signal,
+      headers: {
+        'X-Imintul-Token': token
+      }
     });
     clearTimeout(timeoutId);
 

@@ -66,12 +66,8 @@
       showSubtitleModal = false;
       showDownloadModal = false;
       
-      // Auto-rotate to landscape if on a mobile portrait screen
-      if (typeof window !== 'undefined' && window.innerWidth < window.innerHeight && window.innerWidth < 768) {
-        isForceLandscape = true;
-      } else {
-        isForceLandscape = false;
-      }
+      // Layar rotasi mobile dihilangkan atas permintaan pengguna
+      isForceLandscape = false;
       
       resetControlsTimeout();
       

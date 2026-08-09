@@ -162,4 +162,10 @@
     justify-content: center;
     align-items: center;
   }
+  
+  /* Memaksa tombol rewind dan fast-forward muncul di layar HP */
+  :global(.plyr__controls [data-plyr="rewind"]),
+  :global(.plyr__controls [data-plyr="fast-forward"]) {
+    display: inline-flex !important;
+  }
 </style>
