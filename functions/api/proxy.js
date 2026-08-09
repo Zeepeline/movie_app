@@ -14,17 +14,8 @@ export async function onRequest(context) {
   const request = context.request;
   const url = new URL(request.url);
   
-  // 1. Keamanan Lapis 1: Cek Referer/Origin (Longgarkan untuk same-origin fetch yang kadang tidak mengirim header ini)
-  const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
-  const isAllowedDomain = origin === '' || origin.includes('imintul.online') || origin.includes('.pages.dev');
-  
-  if (!isLocal && !isAllowedDomain) {
-    return new Response(JSON.stringify({ success: false, error: 'Access Denied: Invalid Origin' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  // Keamanan Origin telah dihapus karena HLS.js / Safari terkadang tidak mengirim header Origin dengan benar.
+  // API ini sudah dilindungi 100% oleh HMAC Signature Lapis 2 yang tidak bisa dipalsukan.
 
   const targetUrl = url.searchParams.get('url');
   const targetHeadersStr = url.searchParams.get('headers') || '{}';
