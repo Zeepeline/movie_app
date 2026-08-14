@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Moov Clone',
-        short_name: 'Moov',
-        description: 'Moov Clone - Movie and TV Show Tracker',
+        name: 'Irmintul Movie',
+        short_name: 'Irmintul',
+        description: 'Irmintul Movie - Movie & TV Series Streaming Tracker',
         theme_color: '#0b0f19',
         background_color: '#0b0f19',
         display: 'standalone',

@@ -8,19 +8,23 @@
   
   let selectedGenre: { id: number | null, name: string } = { id: null, name: 'All Series' };
   let selectedYear: string = "";
+  let selectedSort: string = "popularity.desc";
+  let selectedRating: number | null = null;
   let genreSeries: any[] = [];
   let isGenreLoading = false;
   let genrePage = 1;
   let isLoadingMore = false;
 
-  async function handleFilter(event: CustomEvent<{ genre: { id: number | null, name: string }, year: string }>) {
-    selectedGenre = event.detail.genre;
-    selectedYear = event.detail.year;
+  async function handleFilter(event: CustomEvent<{ genre: { id: number | null, name: string }, year: string, sortBy?: string, minRating?: number | null }>) {
+    selectedGenre = event.detail.genre || selectedGenre;
+    selectedYear = event.detail.year ?? selectedYear;
+    selectedSort = event.detail.sortBy || selectedSort;
+    selectedRating = event.detail.minRating !== undefined ? event.detail.minRating : selectedRating;
     isGenreLoading = true;
     genrePage = 1;
     
     try {
-      genreSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear);
+      genreSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear, selectedSort, selectedRating);
     } catch(e) {
       console.error(e);
     } finally {
@@ -31,7 +35,7 @@
   // Initial load
   onMount(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    handleFilter(new CustomEvent('filter', { detail: { genre: selectedGenre, year: selectedYear } }));
+    handleFilter(new CustomEvent('filter', { detail: { genre: selectedGenre, year: selectedYear, sortBy: selectedSort, minRating: selectedRating } }));
   });
 
   function infiniteScroll(node: HTMLElement) {
@@ -56,7 +60,7 @@
     
     try {
       genrePage++;
-      const newSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear);
+      const newSeries = await getTvSeriesByGenre(selectedGenre.id, genrePage, selectedYear, selectedSort, selectedRating);
       genreSeries = [...genreSeries, ...newSeries];
     } catch(e) {
       console.error("Gagal load more:", e);

@@ -330,7 +330,7 @@
 
   {#if currentPage !== 'login'}
     <footer class="w-full max-w-[1600px] mx-auto px-[4%] mt-12 pt-8 border-t border-white/10 text-center text-sm text-text-muted">
-      <p>Moov Clone © {new Date().getFullYear()} - Built with Svelte + Tailwind + Vidking</p>
+      <p>Irmintul Movie © {new Date().getFullYear()} - Built with Svelte + Tailwind</p>
     </footer>
   {/if}
 </main>

@@ -60,7 +60,7 @@
   }
 </script>
 
-<nav class={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen ? 'py-3.5 bg-black/90 backdrop-blur-2xl border-b border-white/10 shadow-2xl' : 'py-4 sm:py-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent'}`}>
+<nav class={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen ? 'py-3.5 bg-black/90 backdrop-blur-2xl border-b border-white/10 shadow-2xl' : 'py-4 sm:py-6 bg-linear-to-b from-black/90 via-black/50 to-transparent'}`}>
   <div class="w-full max-w-[1600px] mx-auto px-[4%]">
     <!-- Top Row -->
     <div class="flex items-center justify-between">

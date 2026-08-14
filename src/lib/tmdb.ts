@@ -99,10 +99,13 @@ export async function getMoviesByGenre(
   genreId: number | null,
   page: number = 1,
   year: string | null = null,
+  sortBy: string = "popularity.desc",
+  minRating: number | null = null,
 ): Promise<Media[]> {
-  let url = `/discover/movie?page=${page}`;
+  let url = `/discover/movie?page=${page}&sort_by=${sortBy}`;
   if (genreId) url += `&with_genres=${genreId}`;
   if (year) url += `&primary_release_year=${year}`;
+  if (minRating) url += `&vote_average.gte=${minRating}&vote_count.gte=20`;
 
   const data = await fetchTMDB<PaginatedResponse<Media>>(url);
   return data.results || [];
@@ -119,13 +122,27 @@ export async function getTvSeriesByGenre(
   genreId: number | null,
   page: number = 1,
   year: string | null = null,
+  sortBy: string = "popularity.desc",
+  minRating: number | null = null,
 ): Promise<Media[]> {
-  let url = `/discover/tv?page=${page}`;
+  let url = `/discover/tv?page=${page}&sort_by=${sortBy}`;
   if (genreId) url += `&with_genres=${genreId}`;
   if (year) url += `&first_air_date_year=${year}`;
+  if (minRating) url += `&vote_average.gte=${minRating}&vote_count.gte=20`;
 
   const data = await fetchTMDB<PaginatedResponse<Media>>(url);
   return data.results || [];
+}
+
+export async function getMovieCollection(collectionId: number | string) {
+  return await fetchTMDB<{
+    id: number;
+    name: string;
+    overview: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    parts: Media[];
+  }>(`/collection/${collectionId}`);
 }
 
 export async function getMovieDetails(

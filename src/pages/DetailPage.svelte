@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
   import MovieCard from '../components/MovieCard.svelte';
-  import { getImageUrl, getMovieDetailsFull, getReviews, getTvSeasonDetails } from '../lib/tmdb';
+  import { getImageUrl, getMovieCollection, getMovieDetailsFull, getReviews, getTvSeasonDetails } from '../lib/tmdb';
   import { historyStore } from '../store/history';
   import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
 
@@ -11,6 +11,8 @@
 
   const dispatch = createEventDispatcher();
   let movie: any = null;
+  let collection: any = null;
+  let isCollectionLoading = false;
   let isLoading = true;
   let inWatchlist = false;
 
@@ -81,6 +83,7 @@
 
   async function fetchMovieData() {
     isLoading = true;
+    collection = null;
     try {
       movie = await getMovieDetailsFull(movieId, mediaType);
       
@@ -104,6 +107,26 @@
         totalReviewPages = movie.reviews.total_pages || 1;
       }
       
+      // Auto-load collection if movie belongs to a franchise
+      if (movie.belongs_to_collection && movie.belongs_to_collection.id) {
+        try {
+          isCollectionLoading = true;
+          const colData = await getMovieCollection(movie.belongs_to_collection.id);
+          if (colData && colData.parts) {
+            colData.parts.sort((a: any, b: any) => {
+              const dateA = new Date(a.release_date || '1970-01-01').getTime();
+              const dateB = new Date(b.release_date || '1970-01-01').getTime();
+              return dateA - dateB;
+            });
+            collection = colData;
+          }
+        } catch (colErr) {
+          console.error("Gagal load collection:", colErr);
+        } finally {
+          isCollectionLoading = false;
+        }
+      }
+
       // Auto-load episodes if it's a TV series
       if (mediaType === 'tv' && movie.seasons && movie.seasons.length > 0) {
         validSeasons = movie.seasons.filter((s: any) => s.season_number > 0);
@@ -507,6 +530,51 @@
                     </p>
                   </div>
                 </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Franchise / Movie Collection Section -->
+      {#if collection && collection.parts && collection.parts.length > 1}
+        <div class="mb-14 relative overflow-hidden rounded-3xl bg-linear-to-r from-bg-elevated via-bg-elevated/70 to-transparent border border-white/10 p-6 md:p-8">
+          <!-- Ambient collection backdrop -->
+          {#if collection.backdrop_path}
+            <div class="absolute inset-0 -z-10 opacity-20">
+              <img src={getImageUrl(collection.backdrop_path, 'original')} alt={collection.name} class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-linear-to-r from-bg-elevated via-bg-elevated/90 to-bg-elevated/70"></div>
+            </div>
+          {/if}
+
+          <div class="flex flex-col mb-6">
+            <span class="text-brand-red font-bold text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              Koleksi & Sekuel
+            </span>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-white">{collection.name}</h2>
+            {#if collection.overview}
+              <p class="text-white/60 text-sm mt-2 max-w-3xl line-clamp-2">{collection.overview}</p>
+            {/if}
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {#each collection.parts as partMovie}
+              <div class="relative group">
+                <MovieCard 
+                  movieId={partMovie.id}
+                  title={partMovie.title || partMovie.name}
+                  imageUrl={getImageUrl(partMovie.poster_path)}
+                  rating={partMovie.vote_average || 0}
+                  type={'Movie'}
+                  year={(partMovie.release_date || '').substring(0, 4)}
+                  on:detail={handleRelatedMovieDetail}
+                />
+                {#if Number(partMovie.id) === Number(movieId)}
+                  <div class="absolute top-2 left-2 z-20 pointer-events-none bg-brand-red text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg">
+                    Sedang Dilihat
+                  </div>
+                {/if}
               </div>
             {/each}
           </div>

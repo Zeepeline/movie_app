@@ -168,17 +168,82 @@
     }
   }
 
+  let hudMessage = '';
+  let hudTimeout: any;
+
+  function showHud(msg: string) {
+    hudMessage = msg;
+    clearTimeout(hudTimeout);
+    hudTimeout = setTimeout(() => {
+      hudMessage = '';
+    }, 1200);
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    // Ignore if typing in an input or textarea
+    const activeEl = document.activeElement?.tagName.toLowerCase();
+    if (activeEl === 'input' || activeEl === 'textarea' || activeEl === 'select') return;
+
+    if (!player) return;
+
+    switch (e.key.toLowerCase()) {
+      case ' ':
+      case 'k':
+        e.preventDefault();
+        player.togglePlay();
+        showHud(player.playing ? '▶ Diputar' : '⏸ Dijeda');
+        break;
+      case 'arrowleft':
+      case 'j':
+        e.preventDefault();
+        player.currentTime = Math.max(0, player.currentTime - 10);
+        showHud('⏪ -10 detik');
+        break;
+      case 'arrowright':
+      case 'l':
+        e.preventDefault();
+        player.currentTime = Math.min(player.duration || 0, player.currentTime + 10);
+        showHud('⏩ +10 detik');
+        break;
+      case 'arrowup':
+        e.preventDefault();
+        player.volume = Math.min(1, (player.volume || 1) + 0.05);
+        showHud(`🔊 Volume ${Math.round(player.volume * 100)}%`);
+        break;
+      case 'arrowdown':
+        e.preventDefault();
+        player.volume = Math.max(0, (player.volume || 1) - 0.05);
+        showHud(`🔉 Volume ${Math.round(player.volume * 100)}%`);
+        break;
+      case 'f':
+        e.preventDefault();
+        player.fullscreen.toggle();
+        break;
+      case 'm':
+        e.preventDefault();
+        player.muted = !player.muted;
+        showHud(player.muted ? '🔇 Dibisukan' : `🔊 Volume ${Math.round(player.volume * 100)}%`);
+        break;
+      case 'c':
+        e.preventDefault();
+        player.toggleCaptions();
+        showHud('💬 Subtitle Diganti');
+        break;
+    }
+  }
+
   onMount(() => {
     initPlayer();
   });
 
   onDestroy(() => {
+    clearTimeout(hudTimeout);
     if (player) player.destroy();
     if (hls) hls.destroy();
   });
 </script>
 
-<svelte:window on:click={hideContextMenu} />
+<svelte:window on:click={hideContextMenu} on:keydown={handleKeydown} />
 
 <!-- Mengatur tema Plyr menggunakan variabel CSS Plyr -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -187,6 +252,12 @@
   class="w-full h-full flex items-center justify-center overflow-hidden bg-black shadow-2xl relative player-wrapper"
   on:contextmenu={handleContextMenu}
 >
+  <!-- On-Screen Keyboard Shortcut HUD -->
+  {#if hudMessage}
+    <div class="absolute z-50 pointer-events-none top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/20 text-white font-bold text-sm tracking-wide shadow-2xl animate-fade-in flex items-center gap-2">
+      {hudMessage}
+    </div>
+  {/if}
   
   {#if showContextMenu}
     <div 

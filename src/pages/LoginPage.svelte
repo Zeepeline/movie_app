@@ -50,11 +50,11 @@
 
   <!-- Header Logo (Absolute Top) -->
   <div class="absolute top-0 left-0 w-full p-6 lg:px-[4%] z-20">
-    <a href="/" class="text-3xl font-black tracking-tighter text-brand-red flex items-center gap-1" on:click|preventDefault={() => dispatch('navigateHome')}>
+    <a href="/" class="text-2xl sm:text-3xl font-black tracking-tight text-brand-red flex items-center gap-2" on:click|preventDefault={() => dispatch('navigateHome')}>
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
         <path d="M4.5 4.5a3 3 0 00-3 3v9a3 3 0 003 3h8.25a3 3 0 003-3v-9a3 3 0 00-3-3H4.5zM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06z" />
       </svg>
-      MOOV
+      IRMINTUL MOVIE
     </a>
   </div>
 
@@ -127,7 +127,7 @@
       </button>
 
       <p class="mt-8 text-center text-sm text-white/50">
-        New to Moov? 
+        New to Irmintul Movie? 
         <button class="text-white hover:underline font-medium ml-1">Sign up now.</button>
       </p>
     </div>

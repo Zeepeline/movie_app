@@ -27,10 +27,25 @@ export interface PaginatedResponse<T> {
   total_results: number;
 }
 
+export interface MovieCollection {
+  id: number;
+  name: string;
+  overview?: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  parts: Media[];
+}
+
 export interface MovieDetails extends Media {
   runtime?: number;
   genres?: Genre[];
   tagline?: string;
+  belongs_to_collection?: {
+    id: number;
+    name: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+  } | null;
   credits?: {
     cast: any[];
     crew: any[];
