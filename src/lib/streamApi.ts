@@ -23,28 +23,42 @@ export async function getStreamLinks(
 ): Promise<StreamData | null> {
   console.log("getStreamLinks called with:", tmdbId, type, season, episode);
   try {
-    // 1. Ambil informasi film/series dasar dari TMDB untuk mendapatkan title & releaseYear
-    const apiKey = import.meta.env.VITE_TMDB_API_KEY || '4b8c9c4021ba0928e3fa0ebbf7cd9107';
-    const tmdbApiUrl = `https://api.themoviedb.org/3/${type === "tv" ? "tv" : "movie"}/${tmdbId}?api_key=${apiKey}`;
-    const tmdbRes = await fetch(tmdbApiUrl);
-    if (!tmdbRes.ok) throw new Error("TMDB fetch failed");
-    const tmdbData = await tmdbRes.json();
+    // 1. Coba request langsung ke Aether Nebula API (CORS enabled & multi-stream)
+    try {
+      const aetherTargetUrl = `https://nebula.aether.cx/${type === "tv" ? `tv/${tmdbId}/${season || 1}/${episode || 1}` : `movie/${tmdbId}`}`;
+      const aetherRes = await fetch(aetherTargetUrl, {
+        headers: {
+          'Referer': 'https://aether.bar/'
+        }
+      });
+      
+      if (aetherRes.ok) {
+        const aetherData = await aetherRes.json();
+        if (aetherData && aetherData.success && aetherData.streams && aetherData.streams.length > 0) {
+          const sources: StreamSource[] = aetherData.streams.map((s: any) => ({
+            url: s.url,
+            isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
+            quality: s.name || 'Auto'
+          }));
 
-    const title = tmdbData.title || tmdbData.name || "Movie";
-    const releaseYear = (
-      tmdbData.release_date ||
-      tmdbData.first_air_date ||
-      "2024"
-    ).substring(0, 4);
+          return {
+            sources,
+            subtitles: []
+          };
+        }
+      }
+    } catch (directErr) {
+      // Direct fetch failed (e.g. network/CORS), proceed to backend
+    }
 
-    // 2. Tembak ke Backend (Cloudflare Worker lokal/prod)
-    let scrapeUrl = `/api/scrape?tmdbId=${tmdbId}&type=${type}&title=${encodeURIComponent(title)}&releaseYear=${releaseYear}`;
-    if (type === "tv" && season && episode) {
-      scrapeUrl += `&season=${season}&episode=${episode}`;
+    // 2. Fallback: Request ke Backend /api/scrape
+    let scrapeUrl = `/api/scrape?tmdbId=${tmdbId}&type=${type}`;
+    if (type === "tv") {
+      scrapeUrl += `&season=${season || 1}&episode=${episode || 1}`;
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     
     const token = generateChallengeToken();
     const scrapeRes = await fetch(scrapeUrl, {
@@ -56,14 +70,15 @@ export async function getStreamLinks(
     clearTimeout(timeoutId);
 
     if (!scrapeRes.ok) {
-      console.error(`Scrape API Failed (${scrapeRes.status}):`, await scrapeRes.text());
+      if (scrapeRes.status !== 404) {
+        console.warn(`Scrape API returned ${scrapeRes.status}`);
+      }
       return null;
     }
     
-    // Pastikan response adalah JSON (mencegah error parsing jika CF Pages mengembalikan index.html)
     const contentType = scrapeRes.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      console.error("Backend mengembalikan format non-JSON (Mungkin Functions belum ter-deploy dengan benar di Cloudflare).", await scrapeRes.text());
+      console.error("Backend mengembalikan format non-JSON.", await scrapeRes.text());
       return null;
     }
 

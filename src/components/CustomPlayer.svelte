@@ -159,6 +159,15 @@
     }
   }
 
+  let prevSourcesKey = '';
+  $: if (sources && sources.length > 0 && videoElement) {
+    const currentKey = sources.map(s => s.url).join('|');
+    if (currentKey !== prevSourcesKey) {
+      prevSourcesKey = currentKey;
+      initPlayer();
+    }
+  }
+
   onMount(() => {
     initPlayer();
   });
@@ -181,7 +190,7 @@
   
   {#if showContextMenu}
     <div 
-      class="absolute bg-bg-elevated/95 border border-white/10 rounded-xl py-2 min-w-48 z-[100] text-sm shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+      class="absolute bg-bg-elevated/95 border border-white/10 rounded-xl py-2 min-w-48 z-100 text-sm shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-xl"
       style="top: {contextMenuPos.y}px; left: {contextMenuPos.x}px;"
     >
       <button class="w-full text-left px-4 py-2 hover:bg-white/10 text-white transition-colors flex items-center gap-3" on:click={toggleLoop}>

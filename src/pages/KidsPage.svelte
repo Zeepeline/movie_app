@@ -69,7 +69,7 @@
   }
 </script>
 
-<div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-24 animate-fade-in relative z-10">
+<div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-28 md:pt-24 animate-fade-in relative z-10">
   <div class="w-full max-w-[1600px] mx-auto px-[4%]">
     <div class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold mb-2">Kids & Family</h1>
@@ -86,7 +86,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
           {#each Array(12) as _}
-            <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
+            <div class="aspect-2/3 rounded-xl bg-bg-elevated shimmer border border-white/5 shadow-md"></div>
           {/each}
         {:else}
           {#each movies as movie}
@@ -105,14 +105,12 @@
     </section>
 
     <!-- Infinite Scroll Sentinel -->
-    <div use:infiniteScroll class="w-full flex justify-center py-8">
+    <div use:infiniteScroll class="w-full py-6">
       {#if isLoadingMore}
-        <div class="flex items-center gap-2 text-brand-red">
-          <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span class="font-medium text-sm">Loading more...</span>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6 w-full">
+          {#each Array(6) as _}
+            <div class="aspect-2/3 rounded-xl bg-bg-elevated shimmer border border-white/5 shadow-md"></div>
+          {/each}
         </div>
       {/if}
     </div>

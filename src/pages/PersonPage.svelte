@@ -58,11 +58,58 @@
 </script>
 
 {#if isLoading}
-  <div class="w-full h-screen flex items-center justify-center bg-bg-base">
-    <div class="animate-spin h-10 w-10 border-4 border-brand-red border-t-transparent rounded-full"></div>
+  <div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-20 relative z-10">
+    <div class="w-full max-w-[1600px] mx-auto px-[4%]">
+      <!-- Back Button Skeleton -->
+      <div class="w-28 h-9 rounded-full bg-white/10 shimmer mb-8"></div>
+
+      <!-- Actor Info Skeleton -->
+      <div class="flex flex-col md:flex-row gap-8 lg:gap-12 mb-16">
+        <!-- Profile Picture Skeleton -->
+        <div class="w-full md:w-1/3 lg:w-1/4 shrink-0">
+          <div class="rounded-2xl aspect-2/3 bg-white/10 shimmer border border-white/5 shadow-2xl"></div>
+        </div>
+
+        <!-- Bio Details Skeleton -->
+        <div class="flex flex-col flex-1 justify-center">
+          <div class="w-2/3 h-10 md:h-12 rounded-xl bg-white/10 shimmer mb-4"></div>
+          
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-20 h-6 rounded-full bg-white/10 shimmer"></div>
+            <div class="w-28 h-5 rounded-full bg-white/10 shimmer"></div>
+            <div class="w-32 h-5 rounded-full bg-white/10 shimmer"></div>
+          </div>
+
+          <div class="w-28 h-6 rounded-lg bg-white/10 shimmer mb-3"></div>
+          <div class="space-y-3 max-w-3xl">
+            <div class="w-full h-4 rounded bg-white/10 shimmer"></div>
+            <div class="w-full h-4 rounded bg-white/10 shimmer"></div>
+            <div class="w-5/6 h-4 rounded bg-white/10 shimmer"></div>
+            <div class="w-3/4 h-4 rounded bg-white/10 shimmer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filmography Skeleton -->
+      <div class="mt-12">
+        <div class="w-36 h-8 rounded-lg bg-white/10 shimmer mb-8"></div>
+        <div class="space-y-4">
+          {#each Array(4) as _}
+            <div class="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+              <div class="w-16 md:w-20 aspect-2/3 rounded-lg bg-white/10 shimmer shrink-0"></div>
+              <div class="flex-1 space-y-2">
+                <div class="w-20 h-4 rounded bg-white/10 shimmer"></div>
+                <div class="w-1/2 h-5 rounded bg-white/10 shimmer"></div>
+                <div class="w-1/3 h-3 rounded bg-white/10 shimmer"></div>
+              </div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
   </div>
 {:else if person}
-  <div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-20 animate-fade-in relative z-10">
+  <div class="w-full min-h-screen bg-bg-base text-white pb-16 pt-24 md:pt-28 animate-fade-in relative z-10">
     <div class="w-full max-w-[1600px] mx-auto px-[4%]">
       <!-- Back Button -->
       <button 
@@ -146,9 +193,10 @@
                 </div>
               {/if}
 
-              <button 
-                class="relative pl-8 md:pl-12 group text-left w-full block" 
-                on:click={() => dispatch('detail', { id: movie.id, type: movie.media_type })}
+              <a 
+                href={`/?movie=${movie.id}&type=${movie.media_type || 'movie'}`}
+                class="relative pl-8 md:pl-12 group text-left w-full block cursor-pointer" 
+                on:click|preventDefault={() => dispatch('detail', { id: movie.id, type: movie.media_type })}
               >
                 <!-- Timeline Dot -->
                 <div class="absolute -left-1.5 top-6 w-3 h-3 rounded-full bg-white/20 group-hover:bg-brand-red group-hover:scale-150 transition-all duration-300"></div>
@@ -184,7 +232,7 @@
                     {/if}
                   </div>
                 </div>
-              </button>
+              </a>
             {/each}
           </div>
         </div>

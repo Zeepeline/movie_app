@@ -17,27 +17,26 @@ const executablePath = process.platform === 'darwin'
 
   page.on('request', request => {
     const url = request.url();
-    if (url.includes('.m3u8') || url.includes('.mp4')) {
-      if (!url.includes('blank.mp4') && !url.includes('ads') && !streamUrl) {
-        streamUrl = url;
-        console.log("DITEMUKAN:", url);
-      }
+    if (url.includes('.m3u8') || url.includes('.mp4') || url.includes('api') || url.includes('aether') || url.includes('link')) {
+      console.log("REQ:", request.method(), url);
+    }
+  });
+
+  page.on('response', async res => {
+    const url = res.url();
+    if (url.includes('api') || url.includes('link') || url.includes('aether') || url.includes('m3u8')) {
+      console.log("RES:", res.status(), url);
+      try {
+        if (res.headers()['content-type']?.includes('json')) {
+          console.log("BODY:", (await res.text()).substring(0, 300));
+        }
+      } catch(e) {}
     }
   });
 
   console.log("Membuka halaman aether.bar...");
-  await page.goto("https://aether.bar/media/tmdb-movie-969681-spider-man-brand-new-day", { waitUntil: 'domcontentloaded' });
+  await page.goto("https://aether.bar/media/tmdb-movie-969681-spider-man-brand-new-day", { waitUntil: 'networkidle2' });
 
-  try {
-    await page.waitForSelector('iframe, video, .play, #play', { timeout: 3000 });
-    await page.mouse.click(500, 300);
-  } catch(e) {}
-
-  for (let i = 0; i < 40; i++) {
-    if (streamUrl) break;
-    await new Promise(r => setTimeout(r, 250));
-  }
-  
-  if (!streamUrl) console.log("Gagal mendapatkan M3U8");
+  await new Promise(r => setTimeout(r, 4000));
   await browser.close();
 })();

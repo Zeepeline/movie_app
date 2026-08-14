@@ -119,10 +119,17 @@
     streamData = null;
     
     try {
-      // 1. Dapatkan IMDb ID terlebih dahulu
+      // 1. Ambil langsung stream dari Aether via getStreamLinks
+      const result = await getStreamLinks(tmdbId, mediaType, season, episode);
+      if (result && result.sources && result.sources.length > 0) {
+        streamData = result;
+        isFetchingStream = false;
+        return;
+      }
+
+      // 2. Fallback: Ekosistem Addon Stremio jika Aether belum memiliki stream
       if (!imdbId) await fetchImdbId();
       
-      // 2. Coba ambil stream dari ekosistem Addon Stremio (Cara 4)
       if (imdbId) {
         try {
           const addons = [
@@ -146,11 +153,9 @@
               const data = await res.json();
               
               if (data && data.streams && data.streams.length > 0) {
-                // Cari stream yang berupa URL HTTP langsung (bukan Torrent/infoHash)
                 const httpStream = data.streams.find((s: any) => s.url && s.url.startsWith('http'));
                 if (httpStream) {
                   return {
-                    success: true,
                     sources: [{
                       url: httpStream.url,
                       isM3U8: httpStream.url.includes('.m3u8'),
@@ -167,22 +172,10 @@
             }
           });
 
-          // Ambil hasil tercepat dari Addon Stremio mana saja yang merespons
           streamData = await Promise.any(stremioPromises);
-          isFetchingStream = false;
-          return; // Sukses menggunakan Stremio!
         } catch (stremioError) {
-          console.warn("Semua Stremio Addons gagal atau timeout, beralih ke server.js...");
+          console.warn("Stremio Addons fallback gagal:", stremioError);
         }
-      }
-
-      // 3. Fallback: Gunakan server.js (Puppeteer) jika Stremio gagal
-      const result = await getStreamLinks(tmdbId, mediaType, season, episode);
-      if (result && result.sources && result.sources.length > 0) {
-        streamData = result;
-      } else {
-        // Gagal mengambil stream
-        console.error("Stream tidak ditemukan dari Aether/Stremio");
       }
     } catch(e) {
       console.error("Error fetching stream:", e);
@@ -370,19 +363,39 @@
       
       <!-- VIDEO PLAYER ATAU IFRAME -->
       {#if selectedServer === 0}
-        {#if isFetchingStream || isFetchingSubtitles}
-          <div class="flex flex-col items-center justify-center w-full h-full text-white bg-black">
-            <svg class="animate-spin h-10 w-10 text-brand-red mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p class="text-white/80 font-medium">Mengekstrak M3U8 & Subtitle...</p>
-            <p class="text-white/40 text-xs mt-2 text-center max-w-xs">Menggunakan IrmintulStream (Proxy)...<br>Bisa butuh 5-15 detik.</p>
+        {#if isFetchingStream}
+          <div class="flex flex-col items-center justify-center w-full h-full text-white bg-black p-6">
+            <div class="w-full max-w-xl aspect-video rounded-3xl bg-white/5 shimmer border border-white/10 flex flex-col items-center justify-center p-8 relative overflow-hidden shadow-2xl">
+              <div class="w-16 h-16 rounded-full bg-white/10 shimmer flex items-center justify-center mb-4 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="text-brand-red ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              </div>
+              <div class="w-52 h-4 rounded-full bg-white/10 shimmer mb-2.5"></div>
+              <div class="w-36 h-3 rounded-full bg-white/5 shimmer"></div>
+            </div>
           </div>
         {:else if streamData}
           <div class="w-full h-full bg-black flex flex-col justify-center">
              <CustomPlayer sources={streamData.sources} subtitles={subtitlesList} />
           </div>
         {:else}
-          <div class="flex items-center justify-center w-full h-full text-white bg-black">
-            <p>IrmintulStream gagal memuat.</p>
+          <div class="flex flex-col items-center justify-center w-full h-full text-white bg-black px-4 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white/40 mb-3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p class="text-lg font-bold mb-1">Stream Tidak Tersedia di IrmintulStream</p>
+            <p class="text-white/50 text-sm max-w-md mb-6">Judul ini belum tersedia di CDN Aether. Silakan gunakan server alternatif berikut:</p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+              <button 
+                class="px-5 py-2.5 bg-brand-red hover:bg-brand-red/80 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg cursor-pointer"
+                on:click={() => selectedServer = 1}
+              >
+                Putar via 111Movies
+              </button>
+              <button 
+                class="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
+                on:click={() => selectedServer = 2}
+              >
+                Putar via VidLink
+              </button>
+            </div>
           </div>
         {/if}
       {:else if tmdbId}
@@ -526,9 +539,13 @@
           
           <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {#if isFetchingSubtitles}
-              <div class="flex flex-col items-center justify-center py-12 gap-3">
-                <svg class="animate-spin h-8 w-8 text-brand-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p class="text-white/50 text-sm">Mencari di OpenSubtitles...</p>
+              <div class="space-y-3 py-2">
+                {#each Array(4) as _}
+                  <div class="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                    <div class="w-28 h-5 rounded-lg bg-white/10 shimmer"></div>
+                    <div class="w-8 h-8 rounded-xl bg-white/10 shimmer"></div>
+                  </div>
+                {/each}
               </div>
             {:else if subtitlesList.length === 0}
               <div class="text-center py-10 bg-white/5 rounded-xl border border-white/10">
@@ -577,9 +594,17 @@
           
           <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {#if isFetchingDownloads}
-              <div class="flex flex-col items-center justify-center py-12 gap-3">
-                <svg class="animate-spin h-8 w-8 text-brand-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p class="text-white/50 text-sm">Mengambil data dari Torrentio...</p>
+              <div class="space-y-3 py-2">
+                {#each Array(4) as _}
+                  <div class="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                    <div class="w-3/4 h-4 rounded bg-white/10 shimmer"></div>
+                    <div class="w-1/2 h-3 rounded bg-white/10 shimmer"></div>
+                    <div class="flex justify-end gap-2 pt-1">
+                      <div class="w-20 h-7 rounded-lg bg-white/10 shimmer"></div>
+                      <div class="w-20 h-7 rounded-lg bg-white/10 shimmer"></div>
+                    </div>
+                  </div>
+                {/each}
               </div>
             {:else if downloadsList.length === 0}
               <div class="text-center py-10 bg-white/5 rounded-xl border border-white/10">

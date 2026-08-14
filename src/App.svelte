@@ -14,7 +14,7 @@
   import KidsPage from "./pages/KidsPage.svelte";
   import WatchlistPage from "./pages/WatchlistPage.svelte";
   import TestPlayerPage from "./pages/TestPlayerPage.svelte";
-  import { historyStore, addToHistory } from './store/history';
+  import { historyStore, addToHistory, clearHistory, removeFromHistory } from './store/history';
 
   let trendingMovies: any[] = [];
   $: nowPlayingMovies = $historyStore;
@@ -164,9 +164,9 @@
 </script>
 
 <main class={currentPage === 'login' ? '' : 'pb-16'}>
-  {#if currentPage !== 'login' && !detailMovieId && !detailPersonId}
+  {#if currentPage !== 'login'}
     <Navbar 
-      currentPage={currentPage}
+      currentPage={detailMovieId || detailPersonId ? '' : currentPage}
       on:play={openPlayer} 
       on:detail={openDetail} 
       on:navigate={handleNavigate}
@@ -215,7 +215,7 @@
       on:detail={openDetail}
     />
   {:else}
-    <div class="h-[80vh] min-h-125 w-full bg-bg-elevated animate-pulse rounded-b-[30px]"></div>
+    <div class="h-[80vh] min-h-125 w-full bg-bg-elevated shimmer rounded-b-[30px]"></div>
   {/if}
 
   <div class="relative z-20 flex flex-col gap-6 mt-3">
@@ -224,7 +224,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
           {#each Array(6) as _}
-            <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
+            <div class="aspect-2/3 rounded-xl bg-bg-elevated shimmer border border-white/5 shadow-md"></div>
           {/each}
         {:else}
           {#each trendingMovies as movie}
@@ -243,20 +243,30 @@
     </section>
 
     {#if nowPlayingMovies.length > 0}
-      <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-2">
-          <h2 class="text-xl font-bold text-white mb-4">Continue Watching</h2>
-          <div class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory pb-4 px-[4%] -mx-[4%]">
-            {#each nowPlayingMovies.slice(0, 6) as movie}
-              <div class="snap-start shrink-0 w-65 sm:w-[320px] lg:w-100">
-                <ContinueWatchingCard 
-                  movieId={movie.id}
-                  title={movie.title}
-                  imageUrl={movie.imageUrl?.startsWith('http') ? movie.imageUrl : getImageUrl(movie.imageUrl, 'w780')}
-                  type={movie.type}
-                  on:play={openPlayer}
-                />
-              </div>
-            {/each}
+      <section class="w-full max-w-[1600px] mx-auto px-[4%] mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-white">Continue Watching</h2>
+          <button 
+            on:click={() => clearHistory()} 
+            class="text-xs sm:text-sm font-medium text-text-muted hover:text-brand-red transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Hapus semua riwayat tontonan"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            Hapus Semua
+          </button>
+        </div>
+        <div class="flex overflow-x-auto gap-4 lg:gap-6 no-scrollbar snap-x snap-mandatory pb-4 pt-1">
+          {#each nowPlayingMovies.slice(0, 6) as movie}
+            <div class="snap-start shrink-0 w-65 sm:w-[320px] lg:w-100">
+              <ContinueWatchingCard 
+                movieId={movie.id}
+                title={movie.title}
+                imageUrl={movie.imageUrl?.startsWith('http') ? movie.imageUrl : getImageUrl(movie.imageUrl, 'w780')}
+                type={movie.type}
+                on:play={openPlayer}
+              />
+            </div>
+          {/each}
         </div>
       </section>
     {/if}
@@ -271,7 +281,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
           {#each Array(6) as _}
-            <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
+            <div class="aspect-2/3 rounded-xl bg-bg-elevated shimmer border border-white/5 shadow-md"></div>
           {/each}
         {:else}
           {#each topRatedMovies as movie}
@@ -297,7 +307,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
         {#if isLoading}
           {#each Array(6) as _}
-            <div class="aspect-2/3 rounded-lg bg-bg-elevated animate-pulse"></div>
+            <div class="aspect-2/3 rounded-xl bg-bg-elevated shimmer border border-white/5 shadow-md"></div>
           {/each}
         {:else}
           {#each indoMovies as movie}

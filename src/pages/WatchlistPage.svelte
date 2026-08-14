@@ -26,7 +26,7 @@
   }
 </script>
 
-<div class="w-full min-h-[80vh] bg-bg-base text-white pb-16 pt-24 animate-fade-in relative z-10">
+<div class="w-full min-h-[80vh] bg-bg-base text-white pb-16 pt-28 md:pt-24 animate-fade-in relative z-10">
   <div class="w-full max-w-[1600px] mx-auto px-[4%]">
     <!-- Back Button -->
     <button 

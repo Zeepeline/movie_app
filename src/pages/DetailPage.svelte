@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
   import MovieCard from '../components/MovieCard.svelte';
-  import { getImageUrl, getMovieDetailsFull, getTvSeasonDetails, getReviews } from '../lib/tmdb';
+  import { getImageUrl, getMovieDetailsFull, getReviews, getTvSeasonDetails } from '../lib/tmdb';
   import { historyStore } from '../store/history';
   import { addToWatchlist, isInWatchlist, removeFromWatchlist } from '../store/watchlist';
 
@@ -183,11 +183,66 @@
 </script>
 
 {#if isLoading}
-  <div class="w-full h-screen flex items-center justify-center">
-    <div class="animate-spin h-10 w-10 border-4 border-brand-red border-t-transparent rounded-full"></div>
+  <div class="w-full min-h-screen bg-bg-base text-white pb-16 relative z-10 pt-20">
+    <!-- Backdrop Shimmer -->
+    <div class="absolute inset-0 -z-10 h-[70vh] bg-bg-elevated shimmer opacity-40">
+      <div class="absolute inset-0 bg-linear-to-t from-bg-base via-bg-base/80 to-transparent"></div>
+    </div>
+
+    <div class="w-full max-w-[1600px] mx-auto px-[4%]">
+      <!-- Back Button Skeleton -->
+      <div class="w-28 h-9 rounded-full bg-white/10 shimmer mb-8"></div>
+
+      <!-- Main Detail Skeleton -->
+      <div class="flex flex-col md:flex-row gap-8 lg:gap-12 mb-16">
+        <!-- Poster Skeleton -->
+        <div class="w-full md:w-1/3 lg:w-1/4 shrink-0">
+          <div class="rounded-2xl aspect-2/3 bg-white/10 shimmer border border-white/5 shadow-2xl"></div>
+        </div>
+
+        <!-- Info Skeleton -->
+        <div class="flex flex-col justify-center flex-1">
+          <div class="w-3/4 h-10 md:h-12 rounded-xl bg-white/10 shimmer mb-4"></div>
+          
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-14 h-5 rounded-full bg-white/10 shimmer"></div>
+            <div class="w-12 h-5 rounded-full bg-white/10 shimmer"></div>
+            <div class="w-16 h-5 rounded-full bg-white/10 shimmer"></div>
+            <div class="w-24 h-5 rounded-full bg-white/10 shimmer"></div>
+          </div>
+
+          <div class="flex items-center gap-4 mb-8">
+            <div class="w-36 h-12 rounded-xl bg-white/10 shimmer"></div>
+            <div class="w-40 h-12 rounded-xl bg-white/10 shimmer"></div>
+            <div class="w-12 h-12 rounded-xl bg-white/10 shimmer"></div>
+          </div>
+
+          <!-- Overview lines -->
+          <div class="space-y-3 max-w-3xl">
+            <div class="w-full h-4 rounded bg-white/10 shimmer"></div>
+            <div class="w-11/12 h-4 rounded bg-white/10 shimmer"></div>
+            <div class="w-4/5 h-4 rounded bg-white/10 shimmer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cast Skeleton -->
+      <div class="mb-12">
+        <div class="w-36 h-8 rounded-lg bg-white/10 shimmer mb-6"></div>
+        <div class="flex gap-4 overflow-hidden pb-4">
+          {#each Array(6) as _}
+            <div class="w-32 shrink-0 flex flex-col items-center">
+              <div class="w-24 h-24 rounded-full bg-white/10 shimmer mb-3"></div>
+              <div class="w-20 h-4 rounded bg-white/10 shimmer mb-1.5"></div>
+              <div class="w-14 h-3 rounded bg-white/10 shimmer"></div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
   </div>
 {:else if movie}
-  <div class="w-full min-h-screen bg-bg-base text-white pb-16 animate-fade-in relative z-10 pt-20">
+  <div class="w-full min-h-screen bg-bg-base text-white pb-16 animate-fade-in relative z-10 pt-24 md:pt-28">
     <!-- Background Image -->
     <div class="absolute inset-0 -z-10 h-[70vh]">
       <img src={getImageUrl(movie.backdrop_path, 'original')} alt={movie.title} class="w-full h-full object-cover opacity-30" />
@@ -361,9 +416,10 @@
           <h2 class="text-2xl font-bold mb-6">Top Cast</h2>
           <div class="flex gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar">
             {#each movie.credits.cast.slice(0, 10) as actor}
-              <button 
-                class="w-32 shrink-0 snap-start flex flex-col items-center text-center group"
-                on:click={() => dispatch('personDetail', { id: actor.id })}
+              <a 
+                href={`/?person=${actor.id}`}
+                class="w-32 shrink-0 snap-start flex flex-col items-center text-center group block cursor-pointer"
+                on:click|preventDefault={() => dispatch('personDetail', { id: actor.id })}
               >
                 <div class="w-24 h-24 rounded-full overflow-hidden mb-3 bg-white/10 border-2 border-white/5 group-hover:border-white/20 transition-colors">
                   {#if actor.profile_path}
@@ -376,7 +432,7 @@
                 </div>
                 <p class="text-sm font-bold text-white leading-tight group-hover:text-brand-red transition-colors">{actor.name}</p>
                 <p class="text-xs text-white/50 mt-1 line-clamp-2">{actor.character}</p>
-              </button>
+              </a>
             {/each}
           </div>
         </div>

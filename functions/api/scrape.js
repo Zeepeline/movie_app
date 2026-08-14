@@ -63,7 +63,9 @@ export async function onRequest(context) {
   }
 
   const tmdbId = url.searchParams.get('tmdbId');
-  const type = url.searchParams.get('type');
+  const type = url.searchParams.get('type') || 'movie';
+  const season = url.searchParams.get('season') || '1';
+  const episode = url.searchParams.get('episode') || '1';
 
   if (!tmdbId) {
     return new Response(JSON.stringify({ success: false, error: 'tmdbId required' }), {
@@ -73,7 +75,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const targetUrl = `https://link.aether.cx/${type === 'tv' ? 'tv' : 'movie'}/${tmdbId}`;
+    const targetUrl = `https://nebula.aether.cx/${type === 'tv' ? `tv/${tmdbId}/${season}/${episode}` : `movie/${tmdbId}`}`;
     
     // Header rahasia untuk menembus Cloudflare Aether
     const aetherHeaders = {
@@ -81,53 +83,58 @@ export async function onRequest(context) {
       'Referer': 'https://aether.bar/'
     };
 
-    const response = await fetch(targetUrl, { headers: aetherHeaders });
-
     if (!response.ok) {
+      if (response.status === 404) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Stream not available for this title on Aether' 
+        }), {
+          status: 404,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
       const errorText = await response.text();
-      throw new Error(`Aether Ghost API Error: ${response.status}. Body: ${errorText.substring(0, 500)}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Aether API Error: ${response.status}` 
+      }), {
+        status: response.status,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
     }
 
     const data = await response.json();
     
-    if (data && data.stream) {
-      const streamUrl = data.stream;
-      const encodedHeaders = encodeURIComponent(JSON.stringify(aetherHeaders));
-      
-      // 2. Keamanan Lapis 2: Buat Token HMAC untuk mencegah pencurian URL Proxy
-      // URL hanya berlaku selama 6 jam (6 * 3600 detik)
-      const exp = Math.floor(Date.now() / 1000) + (6 * 3600);
-      const secretKey = context.env.PROXY_SECRET_KEY || 'imintul-super-secret-key-123!';
-      
-      // Yang kita tandatangani adalah 'session' + waktu kedaluwarsa
-      // Kita tidak menandatangani streamUrl karena di dalam playlist M3U8 ada ribuan URL nested
-      // yang akan memakan waktu terlalu lama jika harus ditandatangani satu per satu.
-      const messageToSign = `session:${exp}`;
-      const signature = await generateHmac(messageToSign, secretKey);
-      
-      // Arahkan ke Cloudflare Function proxy milik kita sendiri
-      const originUrl = url.origin;
-      const proxyUrl = `${originUrl}/api/proxy?url=${encodeURIComponent(streamUrl)}&headers=${encodedHeaders}&exp=${exp}&sig=${signature}`;
-      
+    if (data && data.success && data.streams && data.streams.length > 0) {
       return new Response(JSON.stringify({
         success: true,
-        sources: [
-          {
-            url: proxyUrl, 
-            isM3U8: streamUrl.includes('m3u8'),
-            quality: 'auto'
-          }
-        ]
+        sources: data.streams.map(s => ({
+          url: s.url,
+          isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
+          quality: s.name || 'auto'
+        }))
       }), {
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*' // Bolehkan '*' karena Origin sudah kita validasi secara manual di atas
+          'Access-Control-Allow-Origin': '*'
         }
       });
     } else {
-      return new Response(JSON.stringify({ success: false, error: 'Stream not found in API response' }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Stream not found in API response' 
+      }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
   } catch (error) {

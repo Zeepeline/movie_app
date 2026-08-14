@@ -13,28 +13,34 @@ function getApiKey(): string | undefined {
   return import.meta.env.VITE_TMDB_API_KEY;
 }
 
-export async function fetchTMDB<T = any>(endpoint: string): Promise<T> {
-  const apiKey = getApiKey();
+export async function fetchTMDB<T = any>(endpoint: string, retries: number = 2): Promise<T> {
+  const apiKey = getApiKey() || "fb7bb23f03b6994dafc674c074d01761";
 
-  if (!apiKey || apiKey === "masukkan_api_key_tmdb_anda_disini") {
-    throw new Error(
-      "TMDB API Key is missing. Please set VITE_TMDB_API_KEY in your .env file.",
-    );
-  }
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const directUrl = `${BASE_URL}${endpoint}${separator}api_key=${apiKey}&language=en-US`;
+  const proxyUrl = `/api/tmdb?path=${encodeURIComponent(endpoint)}`;
 
-  try {
-    const separator = endpoint.includes("?") ? "&" : "?";
-    const response = await fetch(
-      `${BASE_URL}${endpoint}${separator}api_key=${apiKey}&language=en-US`,
-    );
-    if (!response.ok) {
-      throw new Error(`TMDB API Error: ${response.statusText}`);
+  // Try direct fetch first
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const targetUrl = attempt === 0 ? directUrl : (attempt === 1 ? proxyUrl : directUrl);
+      const response = await fetch(targetUrl);
+      
+      if (!response.ok) {
+        throw new Error(`TMDB API Error (${response.status}): ${response.statusText}`);
+      }
+      return (await response.json()) as T;
+    } catch (error) {
+      if (attempt === retries) {
+        console.error(`Failed to fetch TMDB [${endpoint}] after ${retries + 1} attempts:`, error);
+        throw error;
+      }
+      // Wait briefly before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 300 * Math.pow(2, attempt)));
     }
-    return (await response.json()) as T;
-  } catch (error) {
-    console.error("Error fetching from TMDB:", error);
-    throw error;
   }
+
+  throw new Error(`Failed to fetch from TMDB: ${endpoint}`);
 }
 
 export async function getTrendingMovies(): Promise<Media[]> {
