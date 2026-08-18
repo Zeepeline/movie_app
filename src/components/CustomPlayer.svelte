@@ -98,6 +98,25 @@
 
           player = new Plyr(videoElement, defaultOptions);
         });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.warn("HLS Network Error, mencoba memulihkan...");
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.warn("HLS Media Error, mencoba memulihkan media...");
+                hls.recoverMediaError();
+                break;
+              default:
+                console.error("HLS Fatal Error, menghancurkan instance:", data);
+                hls.destroy();
+                break;
+            }
+          }
+        });
       } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         // Fallback Safari
         videoElement.src = autoSource.url;
@@ -229,6 +248,21 @@
         player.toggleCaptions();
         showHud('💬 Subtitle Diganti');
         break;
+    }
+  }
+
+  let prevSourcesSignature = "";
+  let prevSubtitlesCount = -1;
+
+  $: {
+    if (sources && sources.length > 0 && videoElement) {
+      const signature = sources.map(s => s.url).join('|');
+      const subCount = subtitles ? subtitles.length : 0;
+      if (signature !== prevSourcesSignature || subCount !== prevSubtitlesCount) {
+        prevSourcesSignature = signature;
+        prevSubtitlesCount = subCount;
+        initPlayer();
+      }
     }
   }
 

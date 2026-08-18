@@ -18,9 +18,11 @@ export async function onRequest(context) {
 
     let html = await response.text();
 
-    // 2. Suntikkan "Racun Adblocker" ke dalam HTML mereka
-    // Skrip ini akan melumpuhkan fungsi-fungsi yang sering dipakai untuk membuka iklan pop-under
+    const targetOrigin = new URL(targetUrl).origin;
+
+    // 2. Suntikkan Base URL dan "Racun Adblocker" ke dalam HTML mereka
     const injectionScript = `
+      <base href="${targetOrigin}/" />
       <script>
         // Lumpuhkan window.open
         window.open = function() { console.log('Adblock Proxy: window.open blocked'); return null; };
@@ -53,7 +55,7 @@ export async function onRequest(context) {
     // Masukkan skrip kita tepat setelah tag <head>
     html = html.replace('<head>', '<head>' + injectionScript);
 
-    // 3. Kembalikan HTML yang sudah "jinak" ke Svelte kita
+    // 3. Kembalikan HTML yang sudah dibebaskan dari pembatasan iframe
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',

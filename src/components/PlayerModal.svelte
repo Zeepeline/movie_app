@@ -54,8 +54,9 @@
   let isForceLandscape = false;
   const servers = [
     { name: 'IrmintulStream (Aether Proxy)', getUrl: () => '' },
+    { name: 'Cinejoy (4K / 1080p Ultra HD)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://cinejoy.to/watch/tv/${id}/${s||1}/${e||1}` : `https://cinejoy.to/watch/movie/${id}` },
+    { name: 'VidLink (Ultra Fast HD)', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
     { name: '111Movies', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://autoembed.co/tv/tmdb/${id}-${s||1}-${e||1}?autoplay=1` : `https://autoembed.co/movie/tmdb/${id}?autoplay=1` },
-    { name: 'VidLink', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s||1}/${e||1}?autoplay=1` : `https://vidlink.pro/movie/${id}?autoplay=1` },
     { name: 'Vidfast', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.me/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.me/embed/movie/${id}` },
     { name: 'Videasy', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://vidsrc.to/embed/tv/${id}/${s||1}/${e||1}` : `https://vidsrc.to/embed/movie/${id}` },
     { name: 'SuperEmbed', getUrl: (id: string | number, type: string, s?: number, e?: number) => type === 'tv' ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s||1}&e=${e||1}&autoplay=1` : `https://multiembed.mov/?video_id=${id}&tmdb=1&autoplay=1` },
@@ -233,7 +234,10 @@
       
       if (data && data.subtitles) {
         // Filter only Indonesian and English, and take top 5 to avoid slow loading
-        const filteredSubs = data.subtitles.filter((s: any) => s.lang === 'ind' || s.lang === 'eng').slice(0, 5);
+        const filteredSubs = data.subtitles.filter((s: any) => {
+          const l = (s.lang || '').toLowerCase();
+          return l === 'ind' || l === 'id' || l === 'in' || l === 'eng' || l === 'en' || l.includes('indo');
+        }).slice(0, 8);
         
         const processedSubs = [];
         for (const sub of filteredSubs) {
@@ -247,8 +251,10 @@
             }
             
             const blob = new Blob([vttText], { type: 'text/vtt' });
+            const l = (sub.lang || '').toLowerCase();
+            const isIndo = l === 'ind' || l === 'id' || l === 'in' || l.includes('indo');
             processedSubs.push({
-              lang: sub.lang === 'ind' ? 'Indonesian' : 'English',
+              lang: isIndo ? 'Indonesian' : 'English',
               url: URL.createObjectURL(blob)
             });
           } catch(e) {
@@ -398,6 +404,34 @@
             </div>
           </div>
         {/if}
+      {:else if selectedServer === 1 && tmdbId}
+        <!-- TAMPILAN KHUSUS SERVER CINEJOY DENGAN DIRECT LAUNCH -->
+        <div class="flex flex-col items-center justify-center w-full h-full text-white bg-gradient-to-b from-gray-950 via-black to-gray-950 px-4 text-center">
+          <div class="w-20 h-20 rounded-3xl bg-brand-red/10 border border-brand-red/30 flex items-center justify-center mb-5 shadow-[0_0_50px_rgba(229,9,20,0.25)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-red"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </div>
+          <h3 class="text-2xl font-bold mb-2 tracking-tight">Cinejoy Ultra HD Player</h3>
+          <p class="text-white/60 text-sm max-w-md mb-6 leading-relaxed">
+            Menyediakan kualitas streaming tertinggi <strong class="text-white font-semibold">4K & 1080p Full HD</strong> tanpa iklan mengganggu.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <a 
+              href={servers[1].getUrl(tmdbId, mediaType, season, episode)}
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="px-6 py-3 bg-brand-red hover:bg-brand-red/90 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-xl shadow-brand-red/30 flex items-center gap-2 hover:scale-105 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              Putar di Cinejoy (Tab Baru)
+            </a>
+            <button 
+              class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
+              on:click={() => selectedServer = 0}
+            >
+              Kembali ke Player Utama
+            </button>
+          </div>
+        </div>
       {:else if tmdbId}
         <iframe 
           id="movie-iframe"
@@ -560,7 +594,13 @@
                         <span class="text-white/90 text-sm font-semibold">{getLanguageName(sub.lang)}</span>
                       </div>
                       
-                      <a href={sub.url} target="_blank" title="Download Subtitle" class="flex items-center justify-center shrink-0 bg-white/5 hover:bg-brand-red text-white/70 hover:text-white p-2.5 rounded-xl border border-white/10 hover:border-brand-red transition-all duration-300">
+                      <a 
+                        href={sub.url} 
+                        download={`subtitle_${sub.lang.toLowerCase()}_${tmdbId}.vtt`} 
+                        title="Download Subtitle (.vtt)" 
+                        class="flex items-center justify-center shrink-0 bg-white/5 hover:bg-brand-red text-white/70 hover:text-white p-2.5 rounded-xl border border-white/10 hover:border-brand-red transition-all duration-300"
+                        on:click|stopPropagation
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                       </a>
                     </div>

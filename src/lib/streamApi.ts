@@ -23,72 +23,60 @@ export async function getStreamLinks(
 ): Promise<StreamData | null> {
   console.log("getStreamLinks called with:", tmdbId, type, season, episode);
   try {
-    // 1. Coba request langsung ke Aether Nebula API (CORS enabled & multi-stream)
+    // 1. Coba request via Backend /api/scrape (aman untuk mode production yang di-deploy)
     try {
-      const aetherTargetUrl = `https://nebula.aether.cx/${type === "tv" ? `tv/${tmdbId}/${season || 1}/${episode || 1}` : `movie/${tmdbId}`}?ser=tik`;
-      const aetherRes = await fetch(aetherTargetUrl, {
+      let scrapeUrl = `/api/scrape?tmdbId=${tmdbId}&type=${type}`;
+      if (type === "tv") {
+        scrapeUrl += `&season=${season || 1}&episode=${episode || 1}`;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      
+      const token = generateChallengeToken();
+      const scrapeRes = await fetch(scrapeUrl, {
+        signal: controller.signal,
         headers: {
-          'Referer': 'https://aether.cx/'
+          'X-Imintul-Token': token
         }
       });
-      
+      clearTimeout(timeoutId);
+
+      if (scrapeRes.ok) {
+        const contentType = scrapeRes.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const scrapeData = await scrapeRes.json();
+          if (scrapeData && scrapeData.success && scrapeData.sources && scrapeData.sources.length > 0) {
+            return {
+              sources: scrapeData.sources,
+              subtitles: scrapeData.captions || []
+            };
+          }
+        }
+      }
+    } catch (backendErr) {
+      console.warn("Backend /api/scrape tidak aktif atau gagal, beralih ke direct client request...");
+    }
+
+    // 2. Fallback Direct Aether Nebula (berguna saat dev lokal tanpa wrangler atau saat backend proxy bypass)
+    try {
+      const aetherTargetUrl = `https://nebula.aether.cx/${type === "tv" ? `tv/${tmdbId}/${season || 1}/${episode || 1}` : `movie/${tmdbId}`}?ser=tik`;
+      const aetherRes = await fetch(aetherTargetUrl);
       if (aetherRes.ok) {
         const aetherData = await aetherRes.json();
         if (aetherData && aetherData.success && aetherData.streams && aetherData.streams.length > 0) {
-          const sources: StreamSource[] = aetherData.streams.map((s: any) => ({
-            url: s.url,
-            isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
-            quality: s.name || 'Auto'
-          }));
-
           return {
-            sources,
+            sources: aetherData.streams.map((s: any) => ({
+              url: s.url,
+              isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
+              quality: s.name || 'Auto'
+            })),
             subtitles: []
           };
         }
       }
-    } catch (directErr) {
-      // Direct fetch failed (e.g. network/CORS), proceed to backend
-    }
-
-    // 2. Fallback: Request ke Backend /api/scrape
-    let scrapeUrl = `/api/scrape?tmdbId=${tmdbId}&type=${type}`;
-    if (type === "tv") {
-      scrapeUrl += `&season=${season || 1}&episode=${episode || 1}`;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
-    const token = generateChallengeToken();
-    const scrapeRes = await fetch(scrapeUrl, {
-      signal: controller.signal,
-      headers: {
-        'X-Imintul-Token': token
-      }
-    });
-    clearTimeout(timeoutId);
-
-    if (!scrapeRes.ok) {
-      if (scrapeRes.status !== 404) {
-        console.warn(`Scrape API returned ${scrapeRes.status}`);
-      }
-      return null;
-    }
-    
-    const contentType = scrapeRes.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      console.error("Backend mengembalikan format non-JSON.", await scrapeRes.text());
-      return null;
-    }
-
-    const scrapeData = await scrapeRes.json();
-    
-    if (scrapeData && scrapeData.success && scrapeData.sources) {
-      return {
-        sources: scrapeData.sources,
-        subtitles: scrapeData.captions || []
-      };
+    } catch (aetherErr) {
+      console.warn("Direct Aether request error:", aetherErr);
     }
 
     return null;

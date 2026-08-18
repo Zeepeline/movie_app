@@ -114,13 +114,44 @@ export async function onRequest(context) {
     const data = await response.json();
     
     if (data && data.success && data.streams && data.streams.length > 0) {
+      const secretKey = context.env.PROXY_SECRET_KEY || 'imintul-super-secret-key-123!';
+      const exp = Math.floor(Date.now() / 1000) + 86400; // 24 jam token
+      const sig = await generateHmac(`session:${exp}`, secretKey);
+      const originHost = url.origin;
+
+      const proxyHeaders = JSON.stringify({
+        'Referer': 'https://aether.cx/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      });
+
+      const verifiedStreams = [];
+      for (const s of data.streams) {
+        try {
+          const check = await fetch(s.url, { 
+            method: 'HEAD',
+            headers: { 'Referer': 'https://aether.cx/' } 
+          });
+          if (check.ok) {
+            verifiedStreams.push(s);
+          }
+        } catch (e) {}
+      }
+
+      const finalStreams = verifiedStreams.length > 0 ? verifiedStreams : data.streams;
+
+      const proxiedSources = finalStreams.map(s => {
+        const isM3U8 = s.type === 'hls' || s.url.includes('.m3u8');
+        const proxiedUrl = `${originHost}/api/proxy?url=${encodeURIComponent(s.url)}&headers=${encodeURIComponent(proxyHeaders)}&exp=${exp}&sig=${sig}`;
+        return {
+          url: proxiedUrl,
+          isM3U8: isM3U8,
+          quality: s.name || 'auto'
+        };
+      });
+
       return new Response(JSON.stringify({
         success: true,
-        sources: data.streams.map(s => ({
-          url: s.url,
-          isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
-          quality: s.name || 'auto'
-        }))
+        sources: proxiedSources
       }), {
         headers: { 
           'Content-Type': 'application/json',
