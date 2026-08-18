@@ -25,10 +25,10 @@ export async function getStreamLinks(
   try {
     // 1. Coba request langsung ke Aether Nebula API (CORS enabled & multi-stream)
     try {
-      const aetherTargetUrl = `https://nebula.aether.cx/${type === "tv" ? `tv/${tmdbId}/${season || 1}/${episode || 1}` : `movie/${tmdbId}`}`;
+      const aetherTargetUrl = `https://nebula.aether.cx/${type === "tv" ? `tv/${tmdbId}/${season || 1}/${episode || 1}` : `movie/${tmdbId}`}?ser=tik`;
       const aetherRes = await fetch(aetherTargetUrl, {
         headers: {
-          'Referer': 'https://aether.bar/'
+          'Referer': 'https://aether.cx/'
         }
       });
       

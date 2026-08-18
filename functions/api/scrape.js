@@ -75,13 +75,15 @@ export async function onRequest(context) {
   }
 
   try {
-    const targetUrl = `https://nebula.aether.cx/${type === 'tv' ? `tv/${tmdbId}/${season}/${episode}` : `movie/${tmdbId}`}`;
+    const targetUrl = `https://nebula.aether.cx/${type === 'tv' ? `tv/${tmdbId}/${season}/${episode}` : `movie/${tmdbId}`}?ser=tik`;
     
     // Header rahasia untuk menembus Cloudflare Aether
     const aetherHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer': 'https://aether.bar/'
+      'Referer': 'https://aether.cx/'
     };
+
+    const response = await fetch(targetUrl, { headers: aetherHeaders });
 
     if (!response.ok) {
       if (response.status === 404) {

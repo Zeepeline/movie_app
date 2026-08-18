@@ -34,8 +34,8 @@ const executablePath = process.platform === 'darwin'
     }
   });
 
-  console.log("Membuka halaman aether.bar...");
-  await page.goto("https://aether.bar/media/tmdb-movie-969681-spider-man-brand-new-day", { waitUntil: 'networkidle2' });
+  console.log("Membuka halaman aether.cx...");
+  await page.goto("https://aether.cx/media/tmdb-movie-550", { waitUntil: 'networkidle2' });
 
   await new Promise(r => setTimeout(r, 4000));
   await browser.close();
